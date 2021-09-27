@@ -18,11 +18,11 @@ public class AppTest {
     @Test
     public void example() {
         String apiKey = "phc_VvgWABT4LDIPbWpNxVKuT92aCAghr0FEFlb2tHnPXBY";
-        // String host = "http://159.65.213.147";
         String host = "no-such-host";
+        // host = "http://159.65.213.147";
         PostHog ph = new PostHog.Builder(apiKey).host(host).build();
 
-        String user = "user:13";
+        String user = "user:32";
         ph.capture(user, "movie played", new HashMap<String, Object>() {
             {
                 put("movieId", 123);
@@ -35,9 +35,13 @@ public class AppTest {
                 put("name", "Mary");
                 put("account", 12);
             }
+        }, new HashMap<String, Object>() {
+            {
+                put("first_time", "done");
+            }
         });
 
-        String user2 = "user:14";
+        String user2 = "user:33";
         ph.set(user2, new HashMap<String, Object>() {
             {
                 put("account", 12377);
