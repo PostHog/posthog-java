@@ -1,5 +1,6 @@
 package com.posthog.java;
 
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Collections;
@@ -171,6 +172,7 @@ public class PostHog {
     private JSONObject getEventJson(String event, String distinctId, HashMap<String, Object> properties) {
         JSONObject eventJson = new JSONObject();
         try {
+            eventJson.put("timestamp", Instant.now().toString());
             eventJson.put("distinct_id", distinctId);
             eventJson.put("event", event);
             if (properties != null) {
