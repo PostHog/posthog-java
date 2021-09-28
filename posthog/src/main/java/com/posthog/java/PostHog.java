@@ -2,70 +2,17 @@ package com.posthog.java;
 
 import java.time.Instant;
 import java.util.HashMap;
-import java.util.List;
-import java.util.LinkedList;
-import org.json.JSONObject;
-import org.json.JSONException;
-import java.lang.Exception;
 
-import okhttp3.MediaType;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.RequestBody;
-import okhttp3.Response;
-import okhttp3.Call;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 public class PostHog {
     private String apiKey;
     private String host;
-    private Worker worker;
-    private OkHttpClient client;
-    private Thread thread1;
+    private QueueManager queueManager;
+    private Thread queueManagerThread;
 
-    private class Sending {
-        String apiKey;
-        String host;
-
-        public Sending(String apiKey, String host) {
-            this.apiKey = apiKey;
-            this.host = host;
-        }
-
-        private void send(List<JSONObject> events) {
-            if (events == null || events.isEmpty()) {
-                return;
-            }
-            String json = getRequestBody(events);
-            System.out.println(json);
-
-            try {
-                MediaType JSON = MediaType.parse("application/json; charset=utf-8");
-                RequestBody body = RequestBody.create(json, JSON);
-                Request request = new Request.Builder().url(host + "/batch").post(body).build();
-                System.out.println(request);
-                Call call = client.newCall(request);
-                Response response = call.execute();
-                System.out.println(response.body().string());
-            } catch (Exception e) {
-                e.printStackTrace();
-                System.out.println(e);
-            }
-        }
-
-        private String getRequestBody(List<JSONObject> events) {
-            JSONObject jsonObject = new JSONObject();
-            try {
-                jsonObject.put("api_key", apiKey);
-                jsonObject.put("batch", events);
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
-            return jsonObject.toString();
-        }
-
-    }
-
-    private Sending sending;
+    private Sender sender;
 
     public static class Builder {
         // required
@@ -92,26 +39,30 @@ public class PostHog {
     private PostHog(Builder builder) {
         apiKey = builder.apiKey;
         host = builder.host;
-        client = new OkHttpClient();
-        sending = new Sending(apiKey, host);
-        startWorker();
+        sender = new Sender(apiKey, host);
+        startQueueManager();
     }
 
-    private void startWorker() {
-        worker = new Worker(sending);
-        thread1 = new Thread(worker, "Thread 1");
-        thread1.start();
-        Runtime.getRuntime().addShutdownHook(new Thread() {
-            public void run() {
-                worker.sendAll(); // the runner could be processing a large queue atm and get killed while not
-                                  // having sent it as this run would then be fast
-            }
-        });
+    public void shutdown() {
+        queueManager.stop();
+        try {
+            queueManagerThread.join(); // wait for the current items in queue to be sent
+        } catch (InterruptedException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+    }
+
+    private void startQueueManager() {
+        queueManager = new QueueManager(sender);
+        queueManagerThread = new Thread(queueManager, "PostHog QueueManager thread");
+        queueManagerThread.start();
+        // TODO handle interrupts? (via addShutdownHook)
     }
 
     private void enqueue(String distinctId, String event, HashMap<String, Object> properties) {
         JSONObject eventJson = getEventJson(event, distinctId, properties);
-        worker.add(eventJson);
+        queueManager.add(eventJson);
     }
 
     /**
@@ -229,57 +180,5 @@ public class PostHog {
             e.printStackTrace();
         }
         return eventJson;
-    }
-
-    private class Worker implements Runnable {
-        private Sending sending;
-
-        class QueueHead { // not sure if this is needed, wanted to make sure we can efficiently flush
-                          // while not blocking adds to the queue
-            public List<JSONObject> queue = new LinkedList<JSONObject>(); // TODO: JSONObject might not be the most
-                                                                          // efficient
-            // storage ;
-            // List might not be the most performant for what I'm doing
-
-            public QueueHead() {
-            };
-        }
-
-        public Worker(Sending sending) {
-            this.sending = sending;
-        }
-
-        private QueueHead head = new QueueHead();
-
-        public synchronized void add(JSONObject eventJson) {
-            head.queue.add(eventJson);
-        }
-
-        private void sendAll() {
-            List<JSONObject> toSend = null;
-            synchronized (this) {
-                toSend = head.queue;
-                head.queue = new LinkedList<JSONObject>();
-            }
-            sending.send(toSend); // there's something wrong with calling send from here ; but I don't need that I
-                                  // can just move the sending related info down
-        }
-
-        @Override
-        public void run() {
-            // currently only time based batching, should also have queue size based?
-            while (!Thread.currentThread().isInterrupted()) {
-                try {
-                    Thread.sleep(100);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                    continue;
-                }
-                if (head.queue.isEmpty()) {
-                    continue;
-                }
-                sendAll();
-            }
-        }
     }
 }

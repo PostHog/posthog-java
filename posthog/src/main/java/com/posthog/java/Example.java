@@ -3,13 +3,13 @@ package com.posthog.java;
 import java.util.HashMap;
 import java.util.concurrent.TimeUnit;
 
-public class example {
+public class Example {
     public static void main(String[] args) {
         // TODO: not sure why it didn't work from the test file, this way I was able to
         // run the debugger just fine
         String apiKey = "phc_VvgWABT4LDIPbWpNxVKuT92aCAghr0FEFlb2tHnPXBY";
         String host = "no-such-host";
-        // host = "http://159.65.213.147";
+        host = "http://159.65.213.147";
         PostHog ph = new PostHog.Builder(apiKey).host(host).build();
 
         String user = "user:32";
@@ -58,6 +58,7 @@ public class example {
             }
         });
 
-        // ph.alias(user, user2);
+        ph.alias(user, user2);
+        ph.shutdown();
     }
 }
