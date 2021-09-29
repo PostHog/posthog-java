@@ -1,21 +1,18 @@
 package com.posthog.java;
 
+import java.time.Instant;
 import java.util.HashMap;
-import java.util.List;
-import java.util.Collections;
-import org.json.JSONObject;
-import org.json.JSONException;
 
-import okhttp3.MediaType;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.RequestBody;
-import okhttp3.Response;
-import okhttp3.Call;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 public class PostHog {
     private String apiKey;
     private String host;
+    private QueueManager queueManager;
+    private Thread queueManagerThread;
+
+    private Sender sender;
 
     public static class Builder {
         // required
@@ -42,28 +39,30 @@ public class PostHog {
     private PostHog(Builder builder) {
         apiKey = builder.apiKey;
         host = builder.host;
+        sender = new Sender(apiKey, host);
+        startQueueManager();
     }
 
-    private void send(String distinctId, String event, HashMap<String, Object> properties) {
-        JSONObject eventJson = getEventJson(event, distinctId, properties);
-        String json = getRequestBody(Collections.singletonList(eventJson));
-
-        System.out.println(json);
-
+    public void shutdown() {
+        queueManager.stop();
         try {
-            OkHttpClient client = new OkHttpClient();
-
-            MediaType JSON = MediaType.parse("application/json; charset=utf-8");
-            RequestBody body = RequestBody.create(json, JSON);
-
-            Request request = new Request.Builder().url(host + "/batch").post(body).build();
-            System.out.println(request);
-            Call call = client.newCall(request);
-            Response response = call.execute();
-            System.out.println(response.body().string());
-        } catch (Exception e) {
-            System.out.println(e);
+            queueManagerThread.join(); // wait for the current items in queue to be sent
+        } catch (InterruptedException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
         }
+    }
+
+    private void startQueueManager() {
+        queueManager = new QueueManager(sender);
+        queueManagerThread = new Thread(queueManager, "PostHog QueueManager thread");
+        queueManagerThread.start();
+        // TODO handle interrupts? (via addShutdownHook)
+    }
+
+    private void enqueue(String distinctId, String event, HashMap<String, Object> properties) {
+        JSONObject eventJson = getEventJson(event, distinctId, properties);
+        queueManager.add(eventJson);
     }
 
     /**
@@ -74,7 +73,7 @@ public class PostHog {
      * @param properties an array with any event properties you'd like to set.
      */
     public void capture(String distinctId, String event, HashMap<String, Object> properties) {
-        send(distinctId, event, properties);
+        enqueue(distinctId, event, properties);
     }
 
     /**
@@ -84,7 +83,7 @@ public class PostHog {
      * @param event      name of the event. Must not be null or empty.
      */
     public void capture(String distinctId, String event) {
-        send(distinctId, event, null);
+        enqueue(distinctId, event, null);
     }
 
     /**
@@ -105,7 +104,7 @@ public class PostHog {
         if (propertiesSetOnce != null) {
             props.put("$set_once", propertiesSetOnce);
         }
-        send(distinctId, "$identify", props);
+        enqueue(distinctId, "$identify", props);
     }
 
     /**
@@ -134,7 +133,7 @@ public class PostHog {
                 put("alias", alias);
             }
         };
-        send(distinctId, "$create_alias", props);
+        enqueue(distinctId, "$create_alias", props);
     }
 
     /**
@@ -149,7 +148,7 @@ public class PostHog {
                 put("$set", properties);
             }
         };
-        send(distinctId, "$set", props);
+        enqueue(distinctId, "$set", props);
     }
 
     /**
@@ -165,12 +164,13 @@ public class PostHog {
                 put("$set_once", properties);
             }
         };
-        send(distinctId, "$set_once", props);
+        enqueue(distinctId, "$set_once", props);
     }
 
     private JSONObject getEventJson(String event, String distinctId, HashMap<String, Object> properties) {
         JSONObject eventJson = new JSONObject();
         try {
+            eventJson.put("timestamp", Instant.now().toString());
             eventJson.put("distinct_id", distinctId);
             eventJson.put("event", event);
             if (properties != null) {
@@ -180,17 +180,5 @@ public class PostHog {
             e.printStackTrace();
         }
         return eventJson;
-    }
-
-    private String getRequestBody(List<JSONObject> events) {
-        // Note: This is in prep for actually batching requests
-        JSONObject jsonObject = new JSONObject();
-        try {
-            jsonObject.put("api_key", apiKey);
-            jsonObject.put("batch", events);
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-        return jsonObject.toString();
     }
 }
