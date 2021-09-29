@@ -19,8 +19,7 @@ public class PostHog {
         private final String apiKey;
 
         // optional
-        // private String host = "https://app.posthog.com";
-        private String host = "localhost";
+        private String host = "https://app.posthog.com";
 
         public Builder(String apiKey) {
             this.apiKey = apiKey;
