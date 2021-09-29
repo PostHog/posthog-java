@@ -3,3 +3,4 @@ posthog/.project
 posthog/.settings
 posthog/artifactid
 posthog/target/
+.vscode/
