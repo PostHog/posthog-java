@@ -13,7 +13,7 @@ public class PostHog {
     private QueueManager queueManager;
     private Thread queueManagerThread;
 
-    private Sender sender;
+    private HttpSender sender;
 
     public static class Builder {
         // required
@@ -26,8 +26,8 @@ public class PostHog {
             this.apiKey = apiKey;
         }
 
-        public Builder host(String value) {
-            host = value;
+        public Builder host(String host) {
+            this.host = host;
             return this;
         }
 
@@ -39,7 +39,7 @@ public class PostHog {
     private PostHog(Builder builder) {
         apiKey = builder.apiKey;
         host = builder.host;
-        sender = new Sender(apiKey, host);
+        sender = new HttpSender.Builder(apiKey).host(host).build();
         startQueueManager();
     }
 
