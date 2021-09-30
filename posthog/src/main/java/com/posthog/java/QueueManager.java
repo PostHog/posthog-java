@@ -1,5 +1,6 @@
 package com.posthog.java;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -39,35 +40,77 @@ public class QueueManager implements Runnable {
         }
     }
 
-    private Sender sending;
     private QueuePtr queue = new QueuePtr();
     private volatile boolean stop = false;
-    // TODO: these should be customizable & set good defaults
-    private int maxQueueSize = 10; // if more than this many items in queue trigger a send
-    private int maxTimeToSendMs = 1000; // if more than this time since last send trigger a send
-    private int sleepMs = 100;
     private Instant sendAfter;
+    // builder inputs
+    private Sender sender;
+    private int maxQueueSize;
+    private Duration maxTimeInQueue;
+    private int sleepMs;
 
-    public QueueManager(Sender sending) {
-        this.sending = sending;
+    public static class Builder {
+        // required
+        private final Sender sender;
+
+        // optional
+        private int maxQueueSize = 10; // if more than this many items in queue trigger a send
+        private Duration maxTimeInQueue = Duration.ofSeconds(5); // if more than this time in queue send trigger a send
+        private int sleepMs = 100; // how long do we sleep between checking the above conditions
+
+        public Builder(Sender sender) {
+            this.sender = sender;
+        }
+
+        public Builder maxQueueSize(int maxQueueSize) {
+            this.maxQueueSize = maxQueueSize;
+            return this;
+        }
+
+        public Builder maxTimeInQueue(Duration duration) {
+            this.maxTimeInQueue = duration;
+            return this;
+        }
+
+        public Builder sleepMs(int sleepMs) {
+            this.sleepMs = sleepMs;
+            return this;
+        }
+
+        public QueueManager build() {
+            return new QueueManager(this);
+        }
+    }
+
+    private QueueManager(Builder builder) {
+        this.sender = builder.sender;
+        this.maxQueueSize = builder.maxQueueSize;
+        this.maxTimeInQueue = builder.maxTimeInQueue;
+        this.sleepMs = builder.sleepMs;
     }
 
     public void stop() {
         stop = true; // TODO: should interrupt sleep?
     }
 
-    public synchronized void add(JSONObject eventJson) {
+    public void add(JSONObject eventJson) {
         queue.add(eventJson);
     }
 
-    private void sendAll() {
+    public int queueSize() {
+        return queue.size();
+    }
+
+    public void sendAll() {
         List<JSONObject> toSend = queue.retrieveAndReset();
         updateSendAfter(); // after queue reset but before sending as the latter could take a long time
-        sending.send(toSend);
+        if (!toSend.isEmpty()) {
+            sender.send(toSend);
+        }
     }
 
     private void updateSendAfter() {
-        sendAfter = Instant.now().plusMillis(maxTimeToSendMs);
+        sendAfter = Instant.now().plus(maxTimeInQueue);
     }
 
     private void sleep() {
@@ -85,8 +128,10 @@ public class QueueManager implements Runnable {
         while (!stop) {
             if (queue.size() < maxQueueSize && Instant.now().isBefore(sendAfter)) {
                 sleep();
+            } else {
+                sendAll();
             }
-            sendAll();
         }
+        sendAll();
     }
 }
