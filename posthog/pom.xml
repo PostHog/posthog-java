@@ -8,9 +8,28 @@
   <artifactId>posthog</artifactId>
   <version>1.0-SNAPSHOT</version>
 
-  <name>posthog</name>
-  <url>https://posthog.com</url>
-
+  <name>PostHog Java</name>
+  <description>The hassle-free way to add PostHog to your Java app.</description>
+  <url>http://github.com/PostHog/posthog-java</url>
+  <licenses>
+    <license>
+      <name>MIT License</name>
+      <url>http://www.opensource.org/licenses/mit-license.php</url>
+    </license>
+  </licenses>
+  <developers>
+    <developer>
+      <id>posthog</id>
+      <name>PostHog Inc.</name>
+      <organization>PostHog</organization>
+      <organizationUrl>https://posthog.com</organizationUrl>
+    </developer>
+  </developers>
+  <scm>
+    <connection>scm:git:git://github.com/PostHog/posthog-java.git</connection>
+    <developerConnection>scm:git:ssh://git@github.com/PostHog/posthog-java.git</developerConnection>
+    <url>http://github.com/PostHog/posthog-java</url>
+  </scm>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <maven.compiler.source>8</maven.compiler.source>
