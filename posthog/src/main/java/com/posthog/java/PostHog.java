@@ -2,6 +2,7 @@ package com.posthog.java;
 
 import java.time.Instant;
 import java.util.HashMap;
+import java.util.Map;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -59,7 +60,7 @@ public class PostHog {
         // TODO handle interrupts? (via addShutdownHook)
     }
 
-    private void enqueue(String distinctId, String event, HashMap<String, Object> properties) {
+    private void enqueue(String distinctId, String event, Map<String, Object> properties) {
         JSONObject eventJson = getEventJson(event, distinctId, properties);
         queueManager.add(eventJson);
     }
@@ -71,7 +72,7 @@ public class PostHog {
      * @param event      name of the event. Must not be null or empty.
      * @param properties an array with any event properties you'd like to set.
      */
-    public void capture(String distinctId, String event, HashMap<String, Object> properties) {
+    public void capture(String distinctId, String event, Map<String, Object> properties) {
         enqueue(distinctId, event, properties);
     }
 
@@ -94,9 +95,8 @@ public class PostHog {
      * @param propertiesSetOnce an array with any person properties you'd like to
      *                          set without overwriting previous values.
      */
-    public void identify(String distinctId, HashMap<String, Object> properties,
-            HashMap<String, Object> propertiesSetOnce) {
-        HashMap<String, Object> props = new HashMap<String, Object>();
+    public void identify(String distinctId, Map<String, Object> properties, Map<String, Object> propertiesSetOnce) {
+        Map<String, Object> props = new HashMap<String, Object>();
         if (properties != null) {
             props.put("$set", properties);
         }
@@ -112,7 +112,7 @@ public class PostHog {
      *                   not be null or empty.
      * @param properties an array with any person properties you'd like to set.
      */
-    public void identify(String distinctId, HashMap<String, Object> properties) {
+    public void identify(String distinctId, Map<String, Object> properties) {
         identify(distinctId, properties, null);
     }
 
@@ -126,7 +126,7 @@ public class PostHog {
      *                   overriden.
      */
     public void alias(String distinctId, String alias) {
-        HashMap<String, Object> props = new HashMap<String, Object>() {
+        Map<String, Object> props = new HashMap<String, Object>() {
             {
                 put("distinct_id", distinctId);
                 put("alias", alias);
@@ -141,8 +141,8 @@ public class PostHog {
      *                   not be null or empty.
      * @param properties an array with any person properties you'd like to set.
      */
-    public void set(String distinctId, HashMap<String, Object> properties) {
-        HashMap<String, Object> props = new HashMap<String, Object>() {
+    public void set(String distinctId, Map<String, Object> properties) {
+        Map<String, Object> props = new HashMap<String, Object>() {
             {
                 put("$set", properties);
             }
@@ -157,8 +157,8 @@ public class PostHog {
      * @param properties an array with any person properties you'd like to set.
      *                   Previous values will not be overwritten.
      */
-    public void setOnce(String distinctId, HashMap<String, Object> properties) {
-        HashMap<String, Object> props = new HashMap<String, Object>() {
+    public void setOnce(String distinctId, Map<String, Object> properties) {
+        Map<String, Object> props = new HashMap<String, Object>() {
             {
                 put("$set_once", properties);
             }
@@ -166,7 +166,7 @@ public class PostHog {
         enqueue(distinctId, "$set_once", props);
     }
 
-    private JSONObject getEventJson(String event, String distinctId, HashMap<String, Object> properties) {
+    private JSONObject getEventJson(String event, String distinctId, Map<String, Object> properties) {
         JSONObject eventJson = new JSONObject();
         try {
             eventJson.put("timestamp", Instant.now().toString());
