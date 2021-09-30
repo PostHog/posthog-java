@@ -39,7 +39,7 @@ public class QueueManager implements Runnable {
         }
     }
 
-    private HttpSender sending;
+    private Sender sending;
     private QueuePtr queue = new QueuePtr();
     private volatile boolean stop = false;
     // TODO: these should be customizable & set good defaults
@@ -48,7 +48,7 @@ public class QueueManager implements Runnable {
     private int sleepMs = 100;
     private Instant sendAfter;
 
-    public QueueManager(HttpSender sending) {
+    public QueueManager(Sender sending) {
         this.sending = sending;
     }
 

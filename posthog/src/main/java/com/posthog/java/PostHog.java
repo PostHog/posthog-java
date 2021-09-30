@@ -13,7 +13,7 @@ public class PostHog {
     private QueueManager queueManager;
     private Thread queueManagerThread;
 
-    private HttpSender sender;
+    private Sender sender;
 
     public static class Builder {
         // required
