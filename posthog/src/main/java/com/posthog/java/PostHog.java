@@ -8,14 +8,14 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 public class PostHog {
-    private String apiKey;
-    private String host;
     private QueueManager queueManager;
     private Thread queueManagerThread;
 
-    private Sender sender;
+    private static abstract class BuilderBase {
+        protected QueueManager queueManager;
+    }
 
-    public static class Builder {
+    public static class Builder extends BuilderBase {
         // required
         private final String apiKey;
 
@@ -32,14 +32,25 @@ public class PostHog {
         }
 
         public PostHog build() {
+            Sender sender = new HttpSender.Builder(apiKey).host(host).build();
+            this.queueManager = new QueueManager.Builder(sender).build();
             return new PostHog(this);
         }
     }
 
-    private PostHog(Builder builder) {
-        apiKey = builder.apiKey;
-        host = builder.host;
-        sender = new HttpSender.Builder(apiKey).host(host).build();
+    public static class BuilderWithCustomQueueManager extends BuilderBase {
+
+        public BuilderWithCustomQueueManager(QueueManager queueManager) {
+            this.queueManager = queueManager;
+        }
+
+        public PostHog build() {
+            return new PostHog(this);
+        }
+    }
+
+    private PostHog(BuilderBase builder) {
+        this.queueManager = builder.queueManager;
         startQueueManager();
     }
 
@@ -54,7 +65,6 @@ public class PostHog {
     }
 
     private void startQueueManager() {
-        queueManager = new QueueManager(sender);
         queueManagerThread = new Thread(queueManager, "PostHog QueueManager thread");
         queueManagerThread.start();
         // TODO handle interrupts? (via addShutdownHook)
