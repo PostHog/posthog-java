@@ -9,7 +9,7 @@
   <version>1.0-SNAPSHOT</version>
 
   <name>PostHog Java</name>
-  <description>The hassle-free way to add PostHog to your Java app.</description>
+  <description>The official way to add PostHog to your Java app.</description>
   <url>http://github.com/PostHog/posthog-java</url>
   <licenses>
     <license>
@@ -44,15 +44,21 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-    <groupId>org.json</groupId>
-    <artifactId>json</artifactId>
-    <version>20210307</version>
+      <groupId>org.json</groupId>
+      <artifactId>json</artifactId>
+      <version>20210307</version>
     </dependency>
     <dependency>
-    <groupId>com.squareup.okhttp3</groupId>
-    <artifactId>okhttp</artifactId>
-    <version>4.9.1</version>
-</dependency>
+      <groupId>com.squareup.okhttp3</groupId>
+      <artifactId>okhttp</artifactId>
+      <version>4.9.1</version>
+    </dependency>
+    <dependency>
+      <groupId>com.squareup.okhttp3</groupId>
+      <artifactId>mockwebserver</artifactId>
+      <version>4.9.1</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
 <distributionManagement>
