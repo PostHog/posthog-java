@@ -1,6 +1,6 @@
-posthog/.classpath
-posthog/.project
-posthog/.settings
-posthog/artifactid
-posthog/target/
+*/.classpath
+*/.project
+*/.settings
+*/artifactid
+*/target/
 .vscode/
