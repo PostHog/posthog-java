@@ -59,7 +59,11 @@ public class PostHogTest {
     private void waitUntilQueueEmpty(QueueManager queueManager, int maxWaitTimeMs) throws InterruptedException {
         // we likely don't need to sleep at all, but this is to insure the queueManager
         // thread has time to execute to avoid test flakiness
-        while (queueManager.queueSize() > 0 && maxWaitTimeMs > 0) {
+        while (queueManager.queueSize() > 0) {
+            if (maxWaitTimeMs <= 0) {
+                System.out.println("Timed out waiting for queue to be empty.");
+                break;
+            }
             maxWaitTimeMs--;
             Thread.sleep(1);
         }
