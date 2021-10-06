@@ -54,8 +54,8 @@ public class QueueManager implements Runnable {
         private final Sender sender;
 
         // optional
-        private int maxQueueSize = 10; // if more than this many items in queue trigger a send
-        private Duration maxTimeInQueue = Duration.ofSeconds(5); // if more than this time in queue send trigger a send
+        private int maxQueueSize = 50; // if more than this many items in queue trigger a send
+        private Duration maxTimeInQueue = Duration.ofSeconds(1); // if more than this time in queue send trigger a send
         private int sleepMs = 100; // how long do we sleep between checking the above conditions
 
         public Builder(Sender sender) {
