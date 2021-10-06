@@ -73,7 +73,7 @@ public class PostHogTest {
         ph.capture("id1", "first batch event");
         ph.capture("id2", "first batch event");
         ph.capture("id3", "first batch event");
-        waitUntilQueueEmpty(queueManager, 10);
+        waitUntilQueueEmpty(queueManager, 100);
         ph.capture("id6", "second batch event");
         ph.shutdown();
         assertEquals(2, sender.calls.size());
@@ -110,7 +110,7 @@ public class PostHogTest {
         updateInstantNow(secondInstant);
         ph.capture("id2", "first batch event");
         updateInstantNow(thirdInstant);
-        waitUntilQueueEmpty(queueManager, 10);
+        waitUntilQueueEmpty(queueManager, 100);
         ph.capture("id6", "second batch event");
         ph.shutdown();
         assertEquals(2, sender.calls.size());
