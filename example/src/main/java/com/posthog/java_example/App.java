@@ -7,11 +7,11 @@ import com.posthog.java.PostHog;
 
 // Testing against local PostHog snapshot jar:
 // 1. `mvn install` in posthog folder to put the jar in local repo (~/.m2/repository/com/posthog/java/posthog)
-// 2. Update the api key and host values to yours
+// 2. Set the envs (e.g. `export POSTHOG_API_KEY="<key_value>"`)
 // 3. `mvn compile exec:java` in example folder
 public final class App {
-    private static final String POSTHOG_API_KEY = "phc_gFipiKER7U6JWYEHTk6C240reCnrWLBcKivOcK7JOMh";
-    private static final String POSTHOG_HOST = "http://188.166.138.169";
+    private static final String POSTHOG_API_KEY = System.getenv("POSTHOG_API_KEY");
+    private static final String POSTHOG_HOST = System.getenv("POSTHOG_HOST");
 
     private App() {
     }
