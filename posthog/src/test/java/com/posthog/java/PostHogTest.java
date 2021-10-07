@@ -56,14 +56,28 @@ public class PostHogTest {
 
     // TODO: comprehensive public functions tests
 
+    private void waitUntilQueueEmpty(QueueManager queueManager, int maxWaitTimeMs) throws InterruptedException {
+        // we likely don't need to sleep at all, but this is to insure the queueManager
+        // thread has time to execute to avoid test flakiness
+        while (queueManager.queueSize() > 0) {
+            if (maxWaitTimeMs <= 0) {
+                System.out.println("Timed out waiting for queue to be empty.");
+                break;
+            }
+            maxWaitTimeMs--;
+            Thread.sleep(1);
+        }
+    }
+
     @Test
-    public void testQueueSize3() {
+    public void testQueueSize3() throws InterruptedException {
         queueManager = new QueueManager.Builder(sender).sleepMs(0).maxTimeInQueue(Duration.ofDays(5)).maxQueueSize(3)
                 .build();
         ph = new PostHog.BuilderWithCustomQueueManager(queueManager).build();
         ph.capture("id1", "first batch event");
         ph.capture("id2", "first batch event");
         ph.capture("id3", "first batch event");
+        waitUntilQueueEmpty(queueManager, 10000);
         ph.capture("id6", "second batch event");
         ph.shutdown();
         assertEquals(2, sender.calls.size());
@@ -87,15 +101,6 @@ public class PostHogTest {
                 json.toString());
     }
 
-    private void waitUntilQueueEmpty(QueueManager queueManager, int maxWaitTimeMs) throws InterruptedException {
-        // we likely don't need to sleep at all, but this is to insure the queueManager
-        // thread has time to execute to avoid test flakiness
-        while (queueManager.queueSize() > 0 && maxWaitTimeMs > 0) {
-            maxWaitTimeMs--;
-            Thread.sleep(1);
-        }
-    }
-
     @Test
     public void testMaxTimeInQueue() throws InterruptedException {
         queueManager = new QueueManager.Builder(sender).sleepMs(0).maxTimeInQueue(Duration.ofDays(3))
@@ -109,7 +114,7 @@ public class PostHogTest {
         updateInstantNow(secondInstant);
         ph.capture("id2", "first batch event");
         updateInstantNow(thirdInstant);
-        waitUntilQueueEmpty(queueManager, 10);
+        waitUntilQueueEmpty(queueManager, 10000);
         ph.capture("id6", "second batch event");
         ph.shutdown();
         assertEquals(2, sender.calls.size());
