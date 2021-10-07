@@ -1,6 +1,6 @@
-# ⚠️ Work in progress
+⚠️ Warning - This is beta and may break ⚠️
 
-## Do not use in production!
+User guide available on [posthog.com/docs/integrate/server/java](https://posthog.com/docs/integrate/server/java).
 
 
 ## Releasing
