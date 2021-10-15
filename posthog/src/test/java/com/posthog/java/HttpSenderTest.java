@@ -1,6 +1,7 @@
 package com.posthog.java;
 
 import static org.junit.Assert.assertEquals;
+import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -51,8 +52,8 @@ public class HttpSenderTest {
         sender.send(input);
         RecordedRequest request = mockWebServer.takeRequest();
         assertEquals("/batch", request.getPath());
-        assertEquals("{\"api_key\":\"UNIT_TESTING_API_KEY\",\"batch\":[{\"key\":\"value\"}]}",
-                request.getBody().readUtf8());
+        assertThatJson("{\"api_key\":\"UNIT_TESTING_API_KEY\",\"batch\":[{\"key\":\"value\"}]}")
+                .isEqualTo(request.getBody().readUtf8());
     }
 
     @Test
@@ -68,9 +69,8 @@ public class HttpSenderTest {
         sender.send(input);
         RecordedRequest request = mockWebServer.takeRequest();
         assertEquals("/batch", request.getPath());
-        assertEquals(
-                "{\"api_key\":\"UNIT_TESTING_API_KEY\",\"batch\":"
-                        + "[{\"key\":\"value\"},{\"key2\":\"value2\"},{\"key3\":\"value3\"}]}",
-                request.getBody().readUtf8());
+        assertThatJson("{\"api_key\":\"UNIT_TESTING_API_KEY\",\"batch\":"
+                + "[{\"key\":\"value\"},{\"key2\":\"value2\"},{\"key3\":\"value3\"}]}")
+                        .isEqualTo(request.getBody().readUtf8());
     }
 }
