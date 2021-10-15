@@ -115,6 +115,40 @@ public class PostHogTest {
     }
 
     @Test
+    public void testSet() {
+        ph.set("test id", new HashMap<String, Object>() {
+            {
+                put("email", "john@doe.com");
+                put("proUser", false);
+            }
+        });
+        ph.shutdown();
+        assertEquals(1, sender.calls.size());
+        assertEquals(1, sender.calls.get(0).size());
+        JSONObject json = sender.calls.get(0).get(0);
+        assertThatJson("{\"distinct_id\":\"test id\",\"event\":\"$set\""
+                + ",\"properties\":{\"$set\":{\"email\":\"john@doe.com\",\"proUser\":false}},\"timestamp\":\""
+                + instantExpected + "\"}").isEqualTo(json.toString());
+    }
+
+    @Test
+    public void testSetOnce() {
+        ph.setOnce("test id", new HashMap<String, Object>() {
+            {
+                put("first_location", "colorado");
+                put("first_number", 5);
+            }
+        });
+        ph.shutdown();
+        assertEquals(1, sender.calls.size());
+        assertEquals(1, sender.calls.get(0).size());
+        JSONObject json = sender.calls.get(0).get(0);
+        assertThatJson("{\"distinct_id\":\"test id\",\"event\":\"$set_once\""
+                + ",\"properties\":{\"$set_once\":{\"first_location\":\"colorado\",\"first_number\":5}"
+                + "},\"timestamp\":\"" + instantExpected + "\"}").isEqualTo(json.toString());
+    }
+  
+    @Test
     public void testAlias() {
         ph.alias("test id", "second id");
         ph.shutdown();
@@ -125,8 +159,6 @@ public class PostHogTest {
                 + ",\"properties\":{\"distinct_id\":\"test id\",\"alias\":\"second id\"}" + ",\"timestamp\":\""
                 + instantExpected + "\"}").isEqualTo(json.toString());
     }
-
-    // TODO: comprehensive public functions tests
 
     private void waitUntilQueueEmpty(QueueManager queueManager, int maxWaitTimeMs) throws InterruptedException {
         // we likely don't need to sleep at all, but this is to insure the queueManager
