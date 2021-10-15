@@ -1,6 +1,7 @@
 package com.posthog.java;
 
 import static org.junit.Assert.assertEquals;
+import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -50,8 +51,9 @@ public class PostHogTest {
         assertEquals(1, sender.calls.size());
         assertEquals(1, sender.calls.get(0).size());
         JSONObject json = sender.calls.get(0).get(0);
-        assertEquals("{\"distinct_id\":\"test id\",\"event\":\"test event\",\"timestamp\":\"" + instantExpected + "\"}",
-                json.toString());
+        assertThatJson(
+                "{\"distinct_id\":\"test id\",\"event\":\"test event\",\"timestamp\":\"" + instantExpected + "\"}")
+                        .isEqualTo(json.toString());
     }
 
     // TODO: comprehensive public functions tests
@@ -84,21 +86,21 @@ public class PostHogTest {
         assertEquals(3, sender.calls.get(0).size());
         assertEquals(1, sender.calls.get(1).size());
         JSONObject json = sender.calls.get(0).get(0);
-        assertEquals(
-                "{\"distinct_id\":\"id1\",\"event\":\"first batch event\",\"timestamp\":\"" + instantExpected + "\"}",
-                json.toString());
+        assertThatJson(
+                "{\"distinct_id\":\"id1\",\"event\":\"first batch event\",\"timestamp\":\"" + instantExpected + "\"}")
+                        .isEqualTo(json.toString());
         json = sender.calls.get(0).get(1);
-        assertEquals(
-                "{\"distinct_id\":\"id2\",\"event\":\"first batch event\",\"timestamp\":\"" + instantExpected + "\"}",
-                json.toString());
+        assertThatJson(
+                "{\"distinct_id\":\"id2\",\"event\":\"first batch event\",\"timestamp\":\"" + instantExpected + "\"}")
+                        .isEqualTo(json.toString());
         json = sender.calls.get(0).get(2);
-        assertEquals(
-                "{\"distinct_id\":\"id3\",\"event\":\"first batch event\",\"timestamp\":\"" + instantExpected + "\"}",
-                json.toString());
+        assertThatJson(
+                "{\"distinct_id\":\"id3\",\"event\":\"first batch event\",\"timestamp\":\"" + instantExpected + "\"}")
+                        .isEqualTo(json.toString());
         json = sender.calls.get(1).get(0);
-        assertEquals(
-                "{\"distinct_id\":\"id6\",\"event\":\"second batch event\",\"timestamp\":\"" + instantExpected + "\"}",
-                json.toString());
+        assertThatJson(
+                "{\"distinct_id\":\"id6\",\"event\":\"second batch event\",\"timestamp\":\"" + instantExpected + "\"}")
+                        .isEqualTo(json.toString());
     }
 
     @Test
@@ -121,18 +123,17 @@ public class PostHogTest {
         assertEquals(2, sender.calls.get(0).size());
         assertEquals(1, sender.calls.get(1).size());
         JSONObject json = sender.calls.get(0).get(0);
-        assertEquals(
-                "{\"distinct_id\":\"id1\",\"event\":\"first batch event\",\"timestamp\":\"" + originalInstant + "\"}",
-                json.toString());
+        assertThatJson(
+                "{\"distinct_id\":\"id1\",\"event\":\"first batch event\",\"timestamp\":\"" + originalInstant + "\"}")
+                        .isEqualTo(json.toString());
         json = sender.calls.get(0).get(1);
-        assertEquals(
-                "{\"distinct_id\":\"id2\",\"event\":\"first batch event\",\"timestamp\":\"" + secondInstant + "\"}",
-                json.toString());
+        assertThatJson(
+                "{\"distinct_id\":\"id2\",\"event\":\"first batch event\",\"timestamp\":\"" + secondInstant + "\"}")
+                        .isEqualTo(json.toString());
         json = sender.calls.get(1).get(0);
-        assertEquals(
-                "{\"distinct_id\":\"id6\",\"event\":\"second batch event\",\"timestamp\":\"" + thirdInstant + "\"}",
-                json.toString());
+        assertThatJson(
+                "{\"distinct_id\":\"id6\",\"event\":\"second batch event\",\"timestamp\":\"" + thirdInstant + "\"}")
+                        .isEqualTo(json.toString());
 
     }
-
 }
