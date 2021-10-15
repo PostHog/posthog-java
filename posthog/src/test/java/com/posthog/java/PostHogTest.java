@@ -69,9 +69,9 @@ public class PostHogTest {
         assertEquals(1, sender.calls.size());
         assertEquals(1, sender.calls.get(0).size());
         JSONObject json = sender.calls.get(0).get(0);
-        assertEquals("{\"distinct_id\":\"test id\",\"event\":\"test event\""
+        assertThatJson("{\"distinct_id\":\"test id\",\"event\":\"test event\""
                 + ",\"properties\":{\"movie_id\":123,\"category\":\"romcom\"},\"timestamp\":\"" + instantExpected
-                + "\"}", json.toString());
+                + "\"}").isEqualTo(json.toString());
     }
 
     @Test
@@ -86,9 +86,9 @@ public class PostHogTest {
         assertEquals(1, sender.calls.size());
         assertEquals(1, sender.calls.get(0).size());
         JSONObject json = sender.calls.get(0).get(0);
-        assertEquals("{\"distinct_id\":\"test id\",\"event\":\"$identify\""
+        assertThatJson("{\"distinct_id\":\"test id\",\"event\":\"$identify\""
                 + ",\"properties\":{\"$set\":{\"email\":\"john@doe.com\",\"proUser\":false}},\"timestamp\":\""
-                + instantExpected + "\"}", json.toString());
+                + instantExpected + "\"}").isEqualTo(json.toString());
     }
 
     @Test
@@ -101,16 +101,17 @@ public class PostHogTest {
         }, new HashMap<String, Object>() {
             {
                 put("first_location", "colorado");
+                put("first_number", 5);
             }
         });
         ph.shutdown();
         assertEquals(1, sender.calls.size());
         assertEquals(1, sender.calls.get(0).size());
         JSONObject json = sender.calls.get(0).get(0);
-        assertEquals("{\"distinct_id\":\"test id\",\"event\":\"$identify\""
+        assertThatJson("{\"distinct_id\":\"test id\",\"event\":\"$identify\""
                 + ",\"properties\":{\"$set\":{\"email\":\"john@doe.com\",\"proUser\":false}"
-                + ",\"$set_once\":{\"first_location\":\"colorado\"}" + "},\"timestamp\":\""
-                + instantExpected + "\"}", json.toString());
+                + ",\"$set_once\":{\"first_location\":\"colorado\",\"first_number\":5}" + "},\"timestamp\":\""
+                + instantExpected + "\"}").isEqualTo(json.toString());
     }
 
     // TODO: comprehensive public functions tests
