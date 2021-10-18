@@ -7,6 +7,7 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
+import java.util.HashMap;
 
 import org.json.JSONObject;
 import org.junit.Before;
@@ -56,7 +57,96 @@ public class PostHogTest {
                         .isEqualTo(json.toString());
     }
 
-    // TODO: comprehensive public functions tests
+    @Test
+    public void testCaptureWithProperties() {
+        ph.capture("test id", "test event", new HashMap<String, Object>() {
+            {
+                put("movie_id", 123);
+                put("category", "romcom");
+            }
+        });
+        ph.shutdown();
+        assertEquals(1, sender.calls.size());
+        assertEquals(1, sender.calls.get(0).size());
+        JSONObject json = sender.calls.get(0).get(0);
+        assertThatJson("{\"distinct_id\":\"test id\",\"event\":\"test event\""
+                + ",\"properties\":{\"movie_id\":123,\"category\":\"romcom\"},\"timestamp\":\"" + instantExpected
+                + "\"}").isEqualTo(json.toString());
+    }
+
+    @Test
+    public void testIdentifySimple() {
+        ph.identify("test id", new HashMap<String, Object>() {
+            {
+                put("email", "john@doe.com");
+                put("proUser", false);
+            }
+        });
+        ph.shutdown();
+        assertEquals(1, sender.calls.size());
+        assertEquals(1, sender.calls.get(0).size());
+        JSONObject json = sender.calls.get(0).get(0);
+        assertThatJson("{\"distinct_id\":\"test id\",\"event\":\"$identify\""
+                + ",\"properties\":{\"$set\":{\"email\":\"john@doe.com\",\"proUser\":false}},\"timestamp\":\""
+                + instantExpected + "\"}").isEqualTo(json.toString());
+    }
+
+    @Test
+    public void testIdentifyWithSetOnce() {
+        ph.identify("test id", new HashMap<String, Object>() {
+            {
+                put("email", "john@doe.com");
+                put("proUser", false);
+            }
+        }, new HashMap<String, Object>() {
+            {
+                put("first_location", "colorado");
+                put("first_number", 5);
+            }
+        });
+        ph.shutdown();
+        assertEquals(1, sender.calls.size());
+        assertEquals(1, sender.calls.get(0).size());
+        JSONObject json = sender.calls.get(0).get(0);
+        assertThatJson("{\"distinct_id\":\"test id\",\"event\":\"$identify\""
+                + ",\"properties\":{\"$set\":{\"email\":\"john@doe.com\",\"proUser\":false}"
+                + ",\"$set_once\":{\"first_location\":\"colorado\",\"first_number\":5}" + "},\"timestamp\":\""
+                + instantExpected + "\"}").isEqualTo(json.toString());
+    }
+
+    @Test
+    public void testSet() {
+        ph.set("test id", new HashMap<String, Object>() {
+            {
+                put("email", "john@doe.com");
+                put("proUser", false);
+            }
+        });
+        ph.shutdown();
+        assertEquals(1, sender.calls.size());
+        assertEquals(1, sender.calls.get(0).size());
+        JSONObject json = sender.calls.get(0).get(0);
+        assertThatJson("{\"distinct_id\":\"test id\",\"event\":\"$set\""
+                + ",\"properties\":{\"$set\":{\"email\":\"john@doe.com\",\"proUser\":false}},\"timestamp\":\""
+                + instantExpected + "\"}").isEqualTo(json.toString());
+    }
+
+    @Test
+    public void testSetOnce() {
+        ph.setOnce("test id", new HashMap<String, Object>() {
+            {
+                put("first_location", "colorado");
+                put("first_number", 5);
+            }
+        });
+        ph.shutdown();
+        assertEquals(1, sender.calls.size());
+        assertEquals(1, sender.calls.get(0).size());
+        JSONObject json = sender.calls.get(0).get(0);
+        assertThatJson("{\"distinct_id\":\"test id\",\"event\":\"$set_once\""
+                + ",\"properties\":{\"$set_once\":{\"first_location\":\"colorado\",\"first_number\":5}"
+                + "},\"timestamp\":\"" + instantExpected + "\"}").isEqualTo(json.toString());
+    }
 
     private void waitUntilQueueEmpty(QueueManager queueManager, int maxWaitTimeMs) throws InterruptedException {
         // we likely don't need to sleep at all, but this is to insure the queueManager
