@@ -147,6 +147,18 @@ public class PostHogTest {
                 + ",\"properties\":{\"$set_once\":{\"first_location\":\"colorado\",\"first_number\":5}"
                 + "},\"timestamp\":\"" + instantExpected + "\"}").isEqualTo(json.toString());
     }
+  
+    @Test
+    public void testAlias() {
+        ph.alias("test id", "second id");
+        ph.shutdown();
+        assertEquals(1, sender.calls.size());
+        assertEquals(1, sender.calls.get(0).size());
+        JSONObject json = sender.calls.get(0).get(0);
+        assertThatJson("{\"distinct_id\":\"test id\",\"event\":\"$create_alias\""
+                + ",\"properties\":{\"distinct_id\":\"test id\",\"alias\":\"second id\"}" + ",\"timestamp\":\""
+                + instantExpected + "\"}").isEqualTo(json.toString());
+    }
 
     private void waitUntilQueueEmpty(QueueManager queueManager, int maxWaitTimeMs) throws InterruptedException {
         // we likely don't need to sleep at all, but this is to insure the queueManager
