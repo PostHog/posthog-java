@@ -50,6 +50,7 @@ public class HttpSender implements Sender {
         }
         String json = getRequestBody(events);
 
+        Response response = null;
         try {
             MediaType JSON = MediaType.parse("application/json; charset=utf-8");
             RequestBody body = RequestBody.create(json, JSON);
@@ -58,7 +59,7 @@ public class HttpSender implements Sender {
 
             // must always close an OkHTTP response
             // https://square.github.io/okhttp/4.x/okhttp/okhttp3/-call/execute/
-            Response response = client.newCall(request).execute();
+            response = client.newCall(request).execute();
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
