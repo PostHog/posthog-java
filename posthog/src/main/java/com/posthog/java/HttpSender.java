@@ -10,6 +10,7 @@ import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
+import okhttp3.Response;
 
 public class HttpSender implements Sender {
     private String apiKey;
@@ -49,14 +50,22 @@ public class HttpSender implements Sender {
         }
         String json = getRequestBody(events);
 
+        Response response = null;
         try {
             MediaType JSON = MediaType.parse("application/json; charset=utf-8");
             RequestBody body = RequestBody.create(json, JSON);
             Request request = new Request.Builder().url(host + "/batch").post(body).build();
             Call call = client.newCall(request);
-            call.execute();
+
+            // must always close an OkHTTP response
+            // https://square.github.io/okhttp/4.x/okhttp/okhttp3/-call/execute/
+            response = client.newCall(request).execute();
         } catch (Exception e) {
             e.printStackTrace();
+        } finally {
+            if (response != null) {
+                response.close();
+            }
         }
     }
 
