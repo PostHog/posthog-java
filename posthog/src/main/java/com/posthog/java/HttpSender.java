@@ -54,9 +54,16 @@ public class HttpSender implements Sender {
             RequestBody body = RequestBody.create(json, JSON);
             Request request = new Request.Builder().url(host + "/batch").post(body).build();
             Call call = client.newCall(request);
-            call.execute();
+
+            // must always close an OkHTTP response
+            // https://square.github.io/okhttp/4.x/okhttp/okhttp3/-call/execute/
+            Response response = client.newCall(request).execute();
         } catch (Exception e) {
             e.printStackTrace();
+        } finally {
+            if (response != null) {
+                response.close();
+            }
         }
     }
 
