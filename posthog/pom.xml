@@ -120,20 +120,20 @@
             </execution>
           </executions>
         </plugin>
-        <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-gpg-plugin</artifactId>
-          <version>3.0.1</version>
-          <executions>
-            <execution>
-              <id>sign-artifacts</id>
-              <phase>verify</phase>
-              <goals>
-                <goal>sign</goal>
-              </goals>
-            </execution>
-          </executions>
-        </plugin>
+<!--        <plugin>-->
+<!--          <groupId>org.apache.maven.plugins</groupId>-->
+<!--          <artifactId>maven-gpg-plugin</artifactId>-->
+<!--          <version>3.0.1</version>-->
+<!--          <executions>-->
+<!--            <execution>-->
+<!--              <id>sign-artifacts</id>-->
+<!--              <phase>verify</phase>-->
+<!--              <goals>-->
+<!--                <goal>sign</goal>-->
+<!--              </goals>-->
+<!--            </execution>-->
+<!--          </executions>-->
+<!--        </plugin>-->
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-release-plugin</artifactId>
@@ -146,6 +146,47 @@
           </configuration>
         </plugin>
         <!-- site lifecycle, see https://maven.apache.org/ref/current/maven-core/lifecycles.html#site_Lifecycle -->
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-shade-plugin</artifactId>
+          <version>3.3.0</version>
+          <executions>
+            <execution>
+              <phase>package</phase>
+              <goals>
+                <goal>shade</goal>
+              </goals>
+              <configuration>
+                <relocations>
+                  <relocation>
+                    <pattern>okhttp3</pattern>
+                    <shadedPattern>com.posthog.java.shaded.okhttp3</shadedPattern>
+                  </relocation>
+                  <relocation>
+                    <pattern>kotlin</pattern>
+                    <shadedPattern>com.posthog.java.shaded.kotlin</shadedPattern>
+                  </relocation>
+                  <relocation>
+                    <pattern>okio</pattern>
+                    <shadedPattern>com.posthog.java.shaded.okio</shadedPattern>
+                  </relocation>
+                  <relocation>
+                    <pattern>org.intellij.lang</pattern>
+                    <shadedPattern>com.posthog.java.shaded.org.intellij.lang</shadedPattern>
+                  </relocation>
+                  <relocation>
+                    <pattern>org.json</pattern>
+                    <shadedPattern>com.posthog.java.shaded.org.json</shadedPattern>
+                  </relocation>
+                  <relocation>
+                    <pattern>org.jetbrains</pattern>
+                    <shadedPattern>com.posthog.java.shaded.org.jetbrains</shadedPattern>
+                  </relocation>
+                </relocations>
+              </configuration>
+            </execution>
+          </executions>
+        </plugin>
       </plugins>
   </build>
 </project>
