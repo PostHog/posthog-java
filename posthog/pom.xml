@@ -63,12 +63,12 @@
     <dependency>
       <groupId>com.squareup.okhttp3</groupId>
       <artifactId>okhttp</artifactId>
-      <version>4.9.1</version>
+      <version>4.10.0</version>
     </dependency>
     <dependency>
       <groupId>com.squareup.okhttp3</groupId>
       <artifactId>mockwebserver</artifactId>
-      <version>4.9.1</version>
+      <version>4.10.0</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
@@ -130,6 +130,32 @@
               <phase>verify</phase>
               <goals>
                 <goal>sign</goal>
+              </goals>
+            </execution>
+          </executions>
+        </plugin>
+        <plugin>
+          <groupId>org.owasp</groupId>
+          <artifactId>dependency-check-maven</artifactId>
+          <version>7.2.1</version>
+          <configuration>
+            <failBuildOnCVSS>7</failBuildOnCVSS>
+          </configuration>
+          <executions>
+            <execution>
+              <goals>
+                <goal>check</goal>
+              </goals>
+            </execution>
+          </executions>
+        </plugin>
+        <plugin>
+          <groupId>org.simplify4u.plugins</groupId>
+          <artifactId>pgpverify-maven-plugin</artifactId>
+          <executions>
+            <execution>
+              <goals>
+                <goal>check</goal>
               </goals>
             </execution>
           </executions>
