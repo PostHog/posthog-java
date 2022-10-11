@@ -218,7 +218,7 @@ public class PostHogTest {
         updateInstantNow(secondInstant);
         ph.capture("id2", "first batch event");
         updateInstantNow(thirdInstant);
-        waitUntilQueueEmpty(queueManager, 10000);
+        waitUntilQueueEmpty(queueManager, 15000);
         ph.capture("id6", "second batch event");
         ph.shutdown();
         assertEquals(2, sender.calls.size());
