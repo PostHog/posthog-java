@@ -128,11 +128,11 @@ public class PostHog {
 
     /**
      * 
-     * @param distinctId distinct ID to merge. Must not be null or empty. Note: If
-     *                   there is a conflict, the properties of this person will
-     *                   take precedence.
-     * @param alias      distinct ID to merge. Must not be null or empty. Note: If
-     *                   there is a conflict, the properties of this person will be
+     * @param distinctId distinct ID of the user. Must not be null or empty. Note: If
+     *                   both the distinct ID and the lias have properties, the properties 
+     *                   of this person will take precedence.
+     * @param alias      alias ID that can be used for future identifies. Must not be null
+     *                   or empty. Note: If there is a conflict, the properties of this person will be
      *                   overriden.
      */
     public void alias(String distinctId, String alias) {
