@@ -1,7 +1,6 @@
 package com.posthog.java;
 
 import java.time.Duration;
-import java.time.Instant;
 import java.util.List;
 
 import org.json.JSONException;
