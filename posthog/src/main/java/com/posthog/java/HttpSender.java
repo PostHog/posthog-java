@@ -18,7 +18,6 @@ public class HttpSender implements Sender {
     private String host;
     private OkHttpClient client;
     private int maxRetries;
-
     private Duration retryInterval;
 
     public static class Builder {
@@ -89,19 +88,25 @@ public class HttpSender implements Sender {
                 e.printStackTrace();
             } finally {
                 if (response != null) {
-                    if (response.isSuccessful() || retries >= maxRetries) {
+                    if (response.isSuccessful()) {
                         retry = false;
-                    } else {
-                        retries += 1;
-
-                        try {
-                            Thread.sleep(retryInterval.toMillis());
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
                     }
 
                     response.close();
+                }
+
+                if (retries >= maxRetries) {
+                    retry = false;
+                }
+
+                if (retry) {
+                    retries += 1;
+
+                    try {
+                        Thread.sleep(retryInterval.toMillis());
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
                 }
             }
         }
