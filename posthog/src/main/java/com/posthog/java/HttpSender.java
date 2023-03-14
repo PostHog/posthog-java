@@ -1,5 +1,6 @@
 package com.posthog.java;
 
+import java.time.Duration;
 import java.util.List;
 
 import org.json.JSONException;
@@ -16,6 +17,8 @@ public class HttpSender implements Sender {
     private String apiKey;
     private String host;
     private OkHttpClient client;
+    private int maxRetries;
+    private Duration retryInterval;
 
     public static class Builder {
         // required
@@ -24,12 +27,28 @@ public class HttpSender implements Sender {
         // optional
         private String host = "https://app.posthog.com";
 
+        // optional
+        private int maxRetries = 5;
+
+        // optional
+        private Duration retryInterval = Duration.ofMillis(500);
+
         public Builder(String apiKey) {
             this.apiKey = apiKey;
         }
 
         public Builder host(String host) {
             this.host = host;
+            return this;
+        }
+
+        public Builder maxRetries(int maxRetries) {
+            this.maxRetries = maxRetries;
+            return this;
+        }
+
+        public Builder retryInterval(Duration retryInterval) {
+            this.retryInterval = retryInterval;
             return this;
         }
 
@@ -41,6 +60,8 @@ public class HttpSender implements Sender {
     private HttpSender(Builder builder) {
         this.apiKey = builder.apiKey;
         this.host = builder.host;
+        this.maxRetries = builder.maxRetries;
+        this.retryInterval = builder.retryInterval;
         this.client = new OkHttpClient();
     }
 
@@ -49,22 +70,44 @@ public class HttpSender implements Sender {
             return;
         }
         String json = getRequestBody(events);
-
         Response response = null;
-        try {
-            MediaType JSON = MediaType.parse("application/json; charset=utf-8");
-            RequestBody body = RequestBody.create(json, JSON);
-            Request request = new Request.Builder().url(host + "/batch").post(body).build();
-            Call call = client.newCall(request);
+        boolean retry = true;
+        int retries = 0;
 
-            // must always close an OkHTTP response
-            // https://square.github.io/okhttp/4.x/okhttp/okhttp3/-call/execute/
-            response = client.newCall(request).execute();
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            if (response != null) {
-                response.close();
+        while(retry) {
+            try {
+                MediaType JSON = MediaType.parse("application/json; charset=utf-8");
+                RequestBody body = RequestBody.create(json, JSON);
+                Request request = new Request.Builder().url(host + "/batch").post(body).build();
+                Call call = client.newCall(request);
+
+                // must always close an OkHTTP response
+                // https://square.github.io/okhttp/4.x/okhttp/okhttp3/-call/execute/
+                response = client.newCall(request).execute();
+            } catch (Exception e) {
+                e.printStackTrace();
+            } finally {
+                if (response != null) {
+                    if (response.isSuccessful()) {
+                        retry = false;
+                    }
+
+                    response.close();
+                }
+
+                if (retries >= maxRetries) {
+                    retry = false;
+                }
+
+                if (retry) {
+                    retries += 1;
+
+                    try {
+                        Thread.sleep(retryInterval.toMillis());
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
             }
         }
     }
