@@ -75,11 +75,11 @@ public class PostHogTest {
         assertEquals(1, sender.calls.size());
         assertEquals(2, sender.calls.get(0).size());
 
-        String uuid = sender.calls.get(0).get(0).getString("uuid");
+        String uuid = sender.calls.get(0).get(0).getString("messageId");
         assertEquals(36, uuid.toString().length());
 
         // Make sure subsequent calls generate a different UUID
-        String secondUuid = sender.calls.get(0).get(1).getString("uuid");
+        String secondUuid = sender.calls.get(0).get(1).getString("messageId");
         assertNotEquals(uuid.toString(), secondUuid.toString());
     }
 
