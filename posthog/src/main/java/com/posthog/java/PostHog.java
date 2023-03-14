@@ -8,7 +8,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 public class PostHog {
-    private QueueManager queueManager;
+    private final QueueManager queueManager;
     private Thread queueManagerThread;
 
     private static abstract class BuilderBase {
@@ -106,7 +106,7 @@ public class PostHog {
      *                          set without overwriting previous values.
      */
     public void identify(String distinctId, Map<String, Object> properties, Map<String, Object> propertiesSetOnce) {
-        Map<String, Object> props = new HashMap<String, Object>();
+        var props = new HashMap<String, Object>();
         if (properties != null) {
             props.put("$set", properties);
         }
@@ -136,7 +136,7 @@ public class PostHog {
      *                   overriden.
      */
     public void alias(String distinctId, String alias) {
-        Map<String, Object> props = new HashMap<String, Object>() {
+        var props = new HashMap<String, Object>() {
             {
                 put("distinct_id", distinctId);
                 put("alias", alias);
@@ -152,7 +152,7 @@ public class PostHog {
      * @param properties an array with any person properties you'd like to set.
      */
     public void set(String distinctId, Map<String, Object> properties) {
-        Map<String, Object> props = new HashMap<String, Object>() {
+        var props = new HashMap<String, Object>() {
             {
                 put("$set", properties);
             }
@@ -168,7 +168,7 @@ public class PostHog {
      *                   Previous values will not be overwritten.
      */
     public void setOnce(String distinctId, Map<String, Object> properties) {
-        Map<String, Object> props = new HashMap<String, Object>() {
+        var props = new HashMap<String, Object>() {
             {
                 put("$set_once", properties);
             }
@@ -177,7 +177,7 @@ public class PostHog {
     }
 
     private JSONObject getEventJson(String event, String distinctId, Map<String, Object> properties) {
-        JSONObject eventJson = new JSONObject();
+        var eventJson = new JSONObject();
         try {
             eventJson.put("timestamp", Instant.now().toString());
             eventJson.put("distinct_id", distinctId);
