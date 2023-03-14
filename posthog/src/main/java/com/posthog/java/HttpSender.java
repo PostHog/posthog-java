@@ -92,6 +92,9 @@ public class HttpSender implements Sender {
                 // On 4xx status codes, the request was unsuccessful so we
                 // return and assume events have not been ingested by PostHog.
                 if (response.code() >= 400 && response.code() < 500) {
+                    // Make sure we log that we are giving up specifically
+                    // because of a Http Client error.
+                    System.out.println("Giving up on sending events to PostHog because of a HTTP Client error.");
                     return false;
                 }
             } catch (IOException e) {
@@ -108,17 +111,29 @@ public class HttpSender implements Sender {
             }
 
             retries += 1;
-
+            
+            
             if (retries > maxRetries) {
+                // Make sure to shout very loudly if we have reached the end of
+                // our retries and haven't managed to send events.
+                System.out.println("Giving up on sending events to PostHog after " + retries + " retries.");
                 return false;
             }
+
+            long retryInterval = initialRetryInterval.toMillis() * (long) Math.pow(3, retries)
+
+            // On retries, make sure we log the response code or exception such
+            // that people will know if something is up, ensuring we include the
+            // retry count and how long we will wait before retrying.
+            System.out.println("Retrying sending events to PostHog after " + retries + " retries. Waiting for "
+                    + retryInterval + "ms before retrying.");
 
             try {
                 // TODO: use the Retry-After header if present to determine the
                 // retry interval.
                 // For now we use a fixed initial retry interval, falling back
                 // exponentially.
-                Thread.sleep(initialRetryInterval.toMillis() * (long) Math.pow(3, retries));
+                Thread.sleep(retryInterval);
             } catch (Exception e) {
                 e.printStackTrace();
             }
