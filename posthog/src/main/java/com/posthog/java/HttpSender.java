@@ -74,9 +74,10 @@ public class HttpSender implements Sender {
         Response response = null;
         int retries = 0;
 
+        MediaType JSON = MediaType.parse("application/json; charset=utf-8");
+        RequestBody body = RequestBody.create(json, JSON);
+
         while (true) {
-            MediaType JSON = MediaType.parse("application/json; charset=utf-8");
-            RequestBody body = RequestBody.create(json, JSON);
             Request request = new Request.Builder().url(host + "/batch").post(body).build();
             Call call = client.newCall(request);
 
@@ -89,7 +90,7 @@ public class HttpSender implements Sender {
                     return true;
                 }
 
-                // On 4xx status codes, the request was unsuccessful so we
+                // On 4xx status codes, the request was unsuccessful, so we
                 // return and assume events have not been ingested by PostHog.
                 if (response.code() >= 400 && response.code() < 500) {
                     // Make sure we log that we are giving up specifically
