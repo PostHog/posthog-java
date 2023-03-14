@@ -182,7 +182,7 @@ public class PostHog {
         try {
             // Ensure that we generate an identifier for this event such that we can e.g.
             // deduplicate server-side any duplicates we may receive.
-            eventJson.put("messageId", UUID.randomUUID().toString());
+            eventJson.put("uuid", UUID.randomUUID().toString());
             eventJson.put("timestamp", Instant.now().toString());
             eventJson.put("distinct_id", distinctId);
             eventJson.put("event", event);
