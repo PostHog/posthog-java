@@ -111,8 +111,7 @@ public class HttpSender implements Sender {
             }
 
             retries += 1;
-            
-            
+
             if (retries > maxRetries) {
                 // Make sure to shout very loudly if we have reached the end of
                 // our retries and haven't managed to send events.
@@ -120,7 +119,7 @@ public class HttpSender implements Sender {
                 return false;
             }
 
-            long retryInterval = initialRetryInterval.toMillis() * (long) Math.pow(3, retries)
+            long retryInterval = initialRetryInterval.toMillis() * (long) Math.pow(3, retries);
 
             // On retries, make sure we log the response code or exception such
             // that people will know if something is up, ensuring we include the
