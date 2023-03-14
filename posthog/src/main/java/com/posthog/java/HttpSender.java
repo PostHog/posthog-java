@@ -1,5 +1,6 @@
 package com.posthog.java;
 
+import java.io.IOException;
 import java.time.Duration;
 import java.util.List;
 
@@ -18,7 +19,7 @@ public class HttpSender implements Sender {
     private String host;
     private OkHttpClient client;
     private int maxRetries;
-    private Duration retryInterval;
+    private Duration initialRetryInterval;
 
     public static class Builder {
         // required
@@ -28,10 +29,10 @@ public class HttpSender implements Sender {
         private String host = "https://app.posthog.com";
 
         // optional
-        private int maxRetries = 5;
+        private int maxRetries = 3;
 
         // optional
-        private Duration retryInterval = Duration.ofMillis(500);
+        private Duration initialRetryInterval = Duration.ofMillis(500);
 
         public Builder(String apiKey) {
             this.apiKey = apiKey;
@@ -47,8 +48,8 @@ public class HttpSender implements Sender {
             return this;
         }
 
-        public Builder retryInterval(Duration retryInterval) {
-            this.retryInterval = retryInterval;
+        public Builder initialRetryInterval(Duration initialRetryInterval) {
+            this.initialRetryInterval = initialRetryInterval;
             return this;
         }
 
@@ -61,53 +62,65 @@ public class HttpSender implements Sender {
         this.apiKey = builder.apiKey;
         this.host = builder.host;
         this.maxRetries = builder.maxRetries;
-        this.retryInterval = builder.retryInterval;
+        this.initialRetryInterval = builder.initialRetryInterval;
         this.client = new OkHttpClient();
     }
 
-    public void send(List<JSONObject> events) {
+    public Boolean send(List<JSONObject> events) {
         if (events == null || events.isEmpty()) {
-            return;
+            return null;
         }
         String json = getRequestBody(events);
         Response response = null;
-        boolean retry = true;
         int retries = 0;
 
-        while(retry) {
-            try {
-                MediaType JSON = MediaType.parse("application/json; charset=utf-8");
-                RequestBody body = RequestBody.create(json, JSON);
-                Request request = new Request.Builder().url(host + "/batch").post(body).build();
-                Call call = client.newCall(request);
+        while (true) {
+            MediaType JSON = MediaType.parse("application/json; charset=utf-8");
+            RequestBody body = RequestBody.create(json, JSON);
+            Request request = new Request.Builder().url(host + "/batch").post(body).build();
+            Call call = client.newCall(request);
 
-                // must always close an OkHTTP response
-                // https://square.github.io/okhttp/4.x/okhttp/okhttp3/-call/execute/
-                response = client.newCall(request).execute();
-            } catch (Exception e) {
+            try {
+                response = call.execute();
+
+                if (response.isSuccessful()) {
+                    // On 2xx status codes, the request was successful so we return and assume
+                    // events have been successfully ingested by PostHog.
+                    return true;
+                }
+
+                // On 4xx status codes, the request was unsuccessful so we
+                // return and assume events have not been ingested by PostHog.
+                if (response.code() >= 400 && response.code() < 500) {
+                    return false;
+                }
+            } catch (IOException e) {
+                // TODO: verify if we need to retry on IOException, this may
+                // already be handled by OkHTTP. See
+                // https://square.github.io/okhttp/4.x/okhttp/okhttp3/-ok-http-client/-builder/retry-on-connection-failure/
                 e.printStackTrace();
             } finally {
+                // must always close an OkHTTP response
+                // https://square.github.io/okhttp/4.x/okhttp/okhttp3/-call/execute/
                 if (response != null) {
-                    if (response.isSuccessful()) {
-                        retry = false;
-                    }
-
                     response.close();
                 }
+            }
 
-                if (retries >= maxRetries) {
-                    retry = false;
-                }
+            retries += 1;
 
-                if (retry) {
-                    retries += 1;
+            if (retries > maxRetries) {
+                return false;
+            }
 
-                    try {
-                        Thread.sleep(retryInterval.toMillis());
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                }
+            try {
+                // TODO: use the Retry-After header if present to determine the
+                // retry interval.
+                // For now we use a fixed initial retry interval, falling back
+                // exponentially.
+                Thread.sleep(initialRetryInterval.toMillis() * (long) Math.pow(3, retries));
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         }
     }
