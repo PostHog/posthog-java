@@ -129,10 +129,9 @@ public class HttpSender implements Sender {
                     + retryInterval + "ms before retrying.");
 
             try {
-                // TODO: use the Retry-After header if present to determine the
-                // retry interval.
-                // For now we use a fixed initial retry interval, falling back
-                // exponentially.
+                // TODO: use the Retry-After header if present to determine the retry interval.
+                // For now we use a fixed initial retry interval, falling back exponentially.
+                // TODO this is a blocking sleep, we should use `Future`s here instead
                 Thread.sleep(retryInterval);
             } catch (Exception e) {
                 e.printStackTrace();
