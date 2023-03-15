@@ -15,16 +15,15 @@ Docs: https://central.sonatype.org/publish/publish-guide/
 
 #### 2. Prepare your local setup
 
-1. Create an Access User Token here: https://oss.sonatype.org/#profile;User%20Token (same login as for JIRA) we will need it for the settings file below.
-2. Create a gpg key and distribute your public key, see docs here: https://central.sonatype.org/publish/requirements/gpg/ (we will need the passphase to be specified in the settings file below).
+1. Create a gpg key and distribute your public key, see docs here: https://central.sonatype.org/publish/requirements/gpg/ (we will need the passphase to be specified in the settings file below).
 3. Create a `~/.m2/settings.xml` file with this content (replace the capitalized terms)
 ```
 <settings>
   <servers>
     <server>
       <id>ossrh</id>
-      <username>ACCESS_USER_TOKEN_USERNAME</username>
-      <password>ACCESS_USER_TOKEN_PASS</password>
+      <username>YOUR_SONATYPE_USERNAME</username>
+      <password>YOUR_SONATYPE_PASSWORD</password>
     </server>
   </servers>
   <profiles>
