@@ -12,7 +12,8 @@ public class TestSender implements Sender {
     TestSender() {
     }
 
-    public void send(List<JSONObject> events) {
+    public Boolean send(List<JSONObject> events) {
         calls.add(events);
+        return true;
     }
 }

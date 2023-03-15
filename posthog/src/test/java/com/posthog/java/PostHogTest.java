@@ -1,6 +1,7 @@
 package com.posthog.java;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
 
 import java.time.Clock;
@@ -53,9 +54,33 @@ public class PostHogTest {
         assertEquals(1, sender.calls.size());
         assertEquals(1, sender.calls.get(0).size());
         JSONObject json = sender.calls.get(0).get(0);
-        assertThatJson(
-                "{\"distinct_id\":\"test id\",\"event\":\"test event\",\"timestamp\":\"" + instantExpected + "\"}")
-                .isEqualTo(json.toString());
+        // Assert JSON includes the expected distinct_id, event, and timestamp, ignoring
+        // any extraneus properties.
+        assertThatJson("{\"distinct_id\":\"test id\",\"event\":\"test event\",\"timestamp\":\"" + instantExpected
+                + "\"}").isEqualTo(new JSONObject(json, "distinct_id", "event", "timestamp").toString());
+    }
+
+    @Test
+    public void testEnsureEventHasGeneratedUuid() {
+        // To ensure we have a way to deduplicate events that may be ingested multiple
+        // times due to e.g. retries, we need to ensure that we have an identifier that
+        // is unique per event.
+        queueManager = new QueueManager.Builder(sender).sleepMs(0).maxTimeInQueue(Duration.ofDays(5)).maxQueueSize(3)
+                .build();
+        ph = new PostHog.BuilderWithCustomQueueManager(queueManager).build();
+
+        ph.capture("test id", "test event");
+        ph.capture("test id", "test event");
+        ph.shutdown();
+        assertEquals(1, sender.calls.size());
+        assertEquals(2, sender.calls.get(0).size());
+
+        String uuid = sender.calls.get(0).get(0).getString("uuid");
+        assertEquals(36, uuid.toString().length());
+
+        // Make sure subsequent calls generate a different UUID
+        String secondUuid = sender.calls.get(0).get(1).getString("uuid");
+        assertNotEquals(uuid.toString(), secondUuid.toString());
     }
 
     @Test
@@ -72,7 +97,7 @@ public class PostHogTest {
         JSONObject json = sender.calls.get(0).get(0);
         assertThatJson("{\"distinct_id\":\"test id\",\"event\":\"test event\""
                 + ",\"properties\":{\"movie_id\":123,\"category\":\"romcom\"},\"timestamp\":\"" + instantExpected
-                + "\"}").isEqualTo(json.toString());
+                + "\"}").isEqualTo(new JSONObject(json, "distinct_id", "event", "properties", "timestamp").toString());
     }
 
     @Test
@@ -89,7 +114,8 @@ public class PostHogTest {
         JSONObject json = sender.calls.get(0).get(0);
         assertThatJson("{\"distinct_id\":\"test id\",\"event\":\"$identify\""
                 + ",\"properties\":{\"$set\":{\"email\":\"john@doe.com\",\"proUser\":false}},\"timestamp\":\""
-                + instantExpected + "\"}").isEqualTo(json.toString());
+                + instantExpected + "\"}")
+                .isEqualTo(new JSONObject(json, "distinct_id", "event", "properties", "timestamp").toString());
     }
 
     @Test
@@ -112,7 +138,9 @@ public class PostHogTest {
         assertThatJson("{\"distinct_id\":\"test id\",\"event\":\"$identify\""
                 + ",\"properties\":{\"$set\":{\"email\":\"john@doe.com\",\"proUser\":false}"
                 + ",\"$set_once\":{\"first_location\":\"colorado\",\"first_number\":5}" + "},\"timestamp\":\""
-                + instantExpected + "\"}").isEqualTo(json.toString());
+                + instantExpected + "\"}")
+                .isEqualTo(new JSONObject(json, "distinct_id", "event", "properties", "$set_once", "timestamp")
+                        .toString());
     }
 
     @Test
@@ -129,7 +157,8 @@ public class PostHogTest {
         JSONObject json = sender.calls.get(0).get(0);
         assertThatJson("{\"distinct_id\":\"test id\",\"event\":\"$set\""
                 + ",\"properties\":{\"$set\":{\"email\":\"john@doe.com\",\"proUser\":false}},\"timestamp\":\""
-                + instantExpected + "\"}").isEqualTo(json.toString());
+                + instantExpected + "\"}")
+                .isEqualTo(new JSONObject(json, "distinct_id", "event", "properties", "timestamp").toString());
     }
 
     @Test
@@ -146,7 +175,8 @@ public class PostHogTest {
         JSONObject json = sender.calls.get(0).get(0);
         assertThatJson("{\"distinct_id\":\"test id\",\"event\":\"$set_once\""
                 + ",\"properties\":{\"$set_once\":{\"first_location\":\"colorado\",\"first_number\":5}"
-                + "},\"timestamp\":\"" + instantExpected + "\"}").isEqualTo(json.toString());
+                + "},\"timestamp\":\"" + instantExpected + "\"}")
+                .isEqualTo(new JSONObject(json, "distinct_id", "event", "properties", "timestamp").toString());
     }
 
     @Test
@@ -158,7 +188,8 @@ public class PostHogTest {
         JSONObject json = sender.calls.get(0).get(0);
         assertThatJson("{\"distinct_id\":\"test id\",\"event\":\"$create_alias\""
                 + ",\"properties\":{\"distinct_id\":\"test id\",\"alias\":\"second id\"}" + ",\"timestamp\":\""
-                + instantExpected + "\"}").isEqualTo(json.toString());
+                + instantExpected + "\"}")
+                .isEqualTo(new JSONObject(json, "distinct_id", "event", "properties", "timestamp").toString());
     }
 
     private void waitUntilQueueEmpty(QueueManager queueManager, int maxWaitTimeMs) throws InterruptedException {
@@ -191,19 +222,19 @@ public class PostHogTest {
         JSONObject json = sender.calls.get(0).get(0);
         assertThatJson(
                 "{\"distinct_id\":\"id1\",\"event\":\"first batch event\",\"timestamp\":\"" + instantExpected + "\"}")
-                .isEqualTo(json.toString());
+                .isEqualTo(new JSONObject(json, "distinct_id", "event", "timestamp").toString());
         json = sender.calls.get(0).get(1);
         assertThatJson(
                 "{\"distinct_id\":\"id2\",\"event\":\"first batch event\",\"timestamp\":\"" + instantExpected + "\"}")
-                .isEqualTo(json.toString());
+                .isEqualTo(new JSONObject(json, "distinct_id", "event", "timestamp").toString());
         json = sender.calls.get(0).get(2);
         assertThatJson(
                 "{\"distinct_id\":\"id3\",\"event\":\"first batch event\",\"timestamp\":\"" + instantExpected + "\"}")
-                .isEqualTo(json.toString());
+                .isEqualTo(new JSONObject(json, "distinct_id", "event", "timestamp").toString());
         json = sender.calls.get(1).get(0);
         assertThatJson(
                 "{\"distinct_id\":\"id6\",\"event\":\"second batch event\",\"timestamp\":\"" + instantExpected + "\"}")
-                .isEqualTo(json.toString());
+                .isEqualTo(new JSONObject(json, "distinct_id", "event", "timestamp").toString());
     }
 
     // NOTE: this test doesn't appear to pass when run with the rest of the
@@ -232,15 +263,15 @@ public class PostHogTest {
         JSONObject json = sender.calls.get(0).get(0);
         assertThatJson(
                 "{\"distinct_id\":\"id1\",\"event\":\"first batch event\",\"timestamp\":\"" + originalInstant + "\"}")
-                .isEqualTo(json.toString());
+                .isEqualTo(new JSONObject(json, "distinct_id", "event", "timestamp").toString());
         json = sender.calls.get(0).get(1);
         assertThatJson(
                 "{\"distinct_id\":\"id2\",\"event\":\"first batch event\",\"timestamp\":\"" + secondInstant + "\"}")
-                .isEqualTo(json.toString());
+                .isEqualTo(new JSONObject(json, "distinct_id", "event", "timestamp").toString());
         json = sender.calls.get(1).get(0);
         assertThatJson(
                 "{\"distinct_id\":\"id6\",\"event\":\"second batch event\",\"timestamp\":\"" + thirdInstant + "\"}")
-                .isEqualTo(json.toString());
+                .isEqualTo(new JSONObject(json, "distinct_id", "event", "timestamp").toString());
 
     }
 }
