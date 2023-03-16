@@ -84,13 +84,28 @@ jobs:
           path: posthog/target
 
       - name: Release to Maven Central
-        # Only actually release to Maven Central if we are on the main branch,
-        # otherwise we perform a snapshot release to Sonatype OSSRH.
+        # Deploy the Java jar artifact to Maven Central using mvn release. If we
+        # are on a tagged branch, we use the release profile, and specify the
+        # release version as the tag name. Otherwise, we set the version to the
+        # commit hash and append -SNAPSHOT to the version.
+        #
+        # This allows us to test the release process on branches without having
+        # to push a tag.
         run: |
-          if [ "${{ github.ref }}" = "refs/heads/main" ]; then
-            # See https://central.sonatype.org/publish/publish-maven/#performing-a-release-deployment
-            mvn deploy --file posthog/pom.xml --batch-mode --show-version -DskipTests -P release
+          if [[ $GITHUB_REF == refs/tags/* ]]; then
+            mvn release:prepare release:perform \
+              --file posthog/pom.xml \
+              --batch-mode \
+              --show-version \
+              -Darguments="-DskipTests -Dgpg.skip=true -Dmaven.javadoc.skip=true" \
+              -DreleaseVersion=${GITHUB_REF#refs/tags/} \
+              -Dtag=${GITHUB_REF#refs/tags/}
           else
-            # See https://central.sonatype.org/publish/publish-maven/#performing-a-snapshot-deployment
-            mvn deploy --file posthog/pom.xml --batch-mode --show-version -DskipTests
+            mvn release:prepare release:perform \
+              --file posthog/pom.xml \
+              --batch-mode \
+              --show-version \
+              -Darguments="-DskipTests -Dgpg.skip=true -Dmaven.javadoc.skip=true" \
+              -DreleaseVersion=${GITHUB_SHA:0:7}-SNAPSHOT \
+              -DdevelopmentVersion=${GITHUB_SHA:0:7}-SNAPSHOT
           fi
