@@ -20,13 +20,7 @@ jobs:
         with:
           java-version: 8
           distribution: 'adopt'
-
-      - name: Cache Maven packages
-        uses: actions/cache@v3
-        with:
-          path: ~/.m2
-          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
-          restore-keys: ${{ runner.os }}-m2
+          cache: maven
 
       - name: Build with Maven
         run: mvn package --file posthog/pom.xml -DskipTests -Dgpg.skip=true -Dmaven.javadoc.skip=true --batch-mode --show-version
@@ -51,13 +45,7 @@ jobs:
         with:
           java-version: 8
           distribution: 'adopt'
-
-      - name: Cache Maven packages
-        uses: actions/cache@v3
-        with:
-          path: ~/.m2
-          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
-          restore-keys: ${{ runner.os }}-m2
+          cache: maven
 
       - name: Download artifact
         uses: actions/download-artifact@v2
@@ -87,13 +75,7 @@ jobs:
           server-password: MAVEN_PASSWORD
           gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
           gpg-passphrase: GPG_PASSPHRASE
-
-      - name: Cache Maven packages
-        uses: actions/cache@v3
-        with:
-          path: ~/.m2
-          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
-          restore-keys: ${{ runner.os }}-m2
+          cache: maven
 
       - name: Download artifact
         uses: actions/download-artifact@v2
