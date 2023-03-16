@@ -56,7 +56,11 @@ jobs:
         # to push a tag.
         run: |
           if [[ $GITHUB_REF == refs/tags/* ]]; then
-            mvn deploy --file posthog/pom.xml -DskipTests --batch-mode --show-version -Prelease -DreleaseVersion=${GITHUB_REF#refs/tags/}
+            mvn deploy --file posthog/pom.xml -DskipTests --batch-mode --show-version -Prelease
           else
-            mvn deploy --file posthog/pom.xml -DskipTests --batch-mode --show-version -Drevision=${GITHUB_SHA::8} -Dchangelist=-SNAPSHOT
+            mvn deploy --file posthog/pom.xml -DskipTests --batch-mode --show-version
           fi
+        env:
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+          MAVEN_USERNAME: ${{ secrets.MAVEN_USERNAME }}
+          MAVEN_PASSWORD: ${{ secrets.MAVEN_PASSWORD }}
