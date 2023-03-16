@@ -34,7 +34,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: posthog-java
-          path: posthog/target/posthog-java-*.jar
+          path: posthog/target/posthog-*.jar
 
   run_tests:
     name: Tests
