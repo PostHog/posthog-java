@@ -102,9 +102,11 @@ jobs:
           path: posthog/target
 
       - name: Release to Maven Central
-        # Only actually release if we are on the main branch, otherwise do a dry run
-        run: mvn deploy --file posthog/pom.xml -DskipTests -Dgpg.skip=true -Dmaven.javadoc.skip=true --batch-mode --show-version -Prelease -DdryRun=${{ github.ref != 'refs/heads/main' }}
-        env:
-          MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
-          MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
-          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+        # Only actually release to Maven Central if we are on the main branch,
+        # otherwise we perform a snapshot release to Sonatype OSSRH.
+        run: |
+          if [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            mvn deploy --file posthog/pom.xml --batch-mode --show-version
+          else
+            mvn deploy --file posthog/pom.xml --batch-mode --show-version -DskipTests -Dgpg.skip=true -Dmaven.javadoc.skip=true -DperformRelease=true -DaltDeploymentRepository=ossrh::default::https://oss.sonatype.org/service/local/staging/deploy/maven2
+          fi
