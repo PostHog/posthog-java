@@ -7,59 +7,9 @@ on:
       - main    
 
 jobs:
-  build:
-    name: Build
+  ci:
+    name: Package, Test, and Release
     runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout the repository
-        uses: actions/checkout@v3
-
-      - name: Set up JDK 8
-        uses: actions/setup-java@v3
-        with:
-          java-version: 8
-          distribution: 'adopt'
-          cache: maven
-
-      - name: Build with Maven
-        run: mvn package --file posthog/pom.xml -DskipTests -Dgpg.skip=true -Dmaven.javadoc.skip=true --batch-mode --show-version
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: posthog-java
-          path: posthog/target/posthog-*.jar
-
-  run_tests:
-    name: Tests
-    runs-on: ubuntu-latest
-    needs: build
-
-    steps:
-      - name: Checkout the repository
-        uses: actions/checkout@v3
-
-      - name: Set up JDK 8
-        uses: actions/setup-java@v3
-        with:
-          java-version: 8
-          distribution: 'adopt'
-          cache: maven
-
-      - name: Download artifact
-        uses: actions/download-artifact@v2
-        with:
-          name: posthog-java
-          path: posthog/target
-
-      - name: Run tests
-        run: mvn test --file posthog/pom.xml --batch-mode --show-version
-
-  release:
-    name: Release to Maven Central
-    runs-on: ubuntu-latest
-    needs: run_tests
 
     steps:
       - name: Checkout the repository
@@ -77,15 +27,28 @@ jobs:
           gpg-passphrase: GPG_PASSPHRASE
           cache: maven
 
-      - name: Download artifact
-        uses: actions/download-artifact@v2
-        with:
-          name: posthog-java
-          path: posthog/target
+      - name: Set POM version
+        # Set the version in the POM to the short commit hash and append
+        # -SNAPSHOT to the version. This allows us to test the release process
+        # on branches without having to push a tag. If we are on a tagged
+        # branch, we set the version to the tag name.
+        run: |
+          if [[ $GITHUB_REF == refs/tags/* ]]; then
+            mvn versions:set -DnewVersion=${GITHUB_REF#refs/tags/} --file posthog/pom.xml
+          else
+            mvn versions:set -DnewVersion=${GITHUB_SHA::8}-SNAPSHOT --file posthog/pom.xml
+          fi
+
+      - name: Build with Maven
+        run: mvn package --file posthog/pom.xml -DskipTests --batch-mode --show-version
+
+      - name: Run tests
+        run: mvn test --file posthog/pom.xml --batch-mode --show-version
 
       - name: Release to Maven Central
-        # Deploy the Java jar artifact to Maven Central using mvn release. If we
-        # are on a tagged branch, we use the release profile, and specify the
+        # Deploy the Java jar artifact to Maven Central using mvn deploy. If we
+        # are on a tagged branch, we use the release profile, and we set the
+        # version  the
         # release version as the tag name. Otherwise, we set the version to the
         # commit hash and append -SNAPSHOT to the version.
         #
@@ -93,19 +56,7 @@ jobs:
         # to push a tag.
         run: |
           if [[ $GITHUB_REF == refs/tags/* ]]; then
-            mvn release:prepare release:perform \
-              --file posthog/pom.xml \
-              --batch-mode \
-              --show-version \
-              -Darguments="-DskipTests -Dgpg.skip=true -Dmaven.javadoc.skip=true" \
-              -DreleaseVersion=${GITHUB_REF#refs/tags/} \
-              -Dtag=${GITHUB_REF#refs/tags/}
+            mvn deploy --file posthog/pom.xml -DskipTests --batch-mode --show-version -Prelease -DreleaseVersion=${GITHUB_REF#refs/tags/}
           else
-            mvn release:prepare release:perform \
-              --file posthog/pom.xml \
-              --batch-mode \
-              --show-version \
-              -Darguments="-DskipTests -Dgpg.skip=true -Dmaven.javadoc.skip=true" \
-              -DreleaseVersion=${GITHUB_SHA:0:7}-SNAPSHOT \
-              -DdevelopmentVersion=${GITHUB_SHA:0:7}-SNAPSHOT
+            mvn deploy --file posthog/pom.xml -DskipTests --batch-mode --show-version -Drevision=${GITHUB_SHA::8} -Dchangelist=-SNAPSHOT
           fi
