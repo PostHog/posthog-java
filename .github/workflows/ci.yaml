@@ -88,7 +88,9 @@ jobs:
         # otherwise we perform a snapshot release to Sonatype OSSRH.
         run: |
           if [ "${{ github.ref }}" = "refs/heads/main" ]; then
-            mvn deploy --file posthog/pom.xml --batch-mode --show-version
+            # See https://central.sonatype.org/publish/publish-maven/#performing-a-release-deployment
+            mvn deploy --file posthog/pom.xml --batch-mode --show-version -DskipTests -P release
           else
-            mvn deploy --file posthog/pom.xml --batch-mode --show-version -DskipTests -Dgpg.skip=true -Dmaven.javadoc.skip=true -DperformRelease=true -DaltDeploymentRepository=ossrh::default::https://oss.sonatype.org/service/local/staging/deploy/maven2
+            # See https://central.sonatype.org/publish/publish-maven/#performing-a-snapshot-deployment
+            mvn deploy --file posthog/pom.xml --batch-mode --show-version -DskipTests
           fi
