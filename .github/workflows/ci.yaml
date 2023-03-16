@@ -94,7 +94,8 @@ jobs:
           path: posthog/target
 
       - name: Release to Maven Central
-        run: mvn deploy --file posthog/pom.xml -DskipTests -Dgpg.skip=true -Dmaven.javadoc.skip=true -B -V
+        # Only actually release if we are on the main branch, otherwise do a dry run
+        run: mvn deploy --file posthog/pom.xml -DskipTests -Dgpg.skip=true -Dmaven.javadoc.skip=true -B -V -Prelease -DdryRun=${{ github.ref != 'refs/heads/main' }}
         env:
           GPG_KEY_NAME: ${{ secrets.GPG_KEY_NAME }}
           GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
