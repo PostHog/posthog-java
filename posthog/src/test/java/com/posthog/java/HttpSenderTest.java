@@ -16,21 +16,20 @@ import org.junit.Test;
 
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
-import okhttp3.mockwebserver.RecordedRequest;
 
 public class HttpSenderTest {
 
     public MockWebServer mockWebServer;
     private HttpSender sender;
-    private String apiKey = "UNIT_TESTING_API_KEY";
 
     @Before
     public void setUp() throws IOException {
         mockWebServer = new MockWebServer();
         mockWebServer.start();
 
-        String httpUrl = mockWebServer.url("").toString();
-        String host = httpUrl.substring(0, httpUrl.length() - 1); // strip trailing /
+        var httpUrl = mockWebServer.url("").toString();
+        var host = httpUrl.substring(0, httpUrl.length() - 1); // strip trailing /
+        var apiKey = "UNIT_TESTING_API_KEY";
         sender = new HttpSender.Builder(apiKey).host(host).maxRetries(1).build();
     }
 
@@ -47,11 +46,11 @@ public class HttpSenderTest {
     @Test
     public void testOneItem() throws InterruptedException {
         mockWebServer.enqueue(new MockResponse());
-        JSONObject json = new JSONObject("{'key': 'value'}");
-        List<JSONObject> input = new ArrayList<JSONObject>();
+        var json = new JSONObject("{'key': 'value'}");
+        var input = new ArrayList<JSONObject>();
         input.add(json);
         sender.send(input);
-        RecordedRequest request = mockWebServer.takeRequest();
+        var request = mockWebServer.takeRequest();
         assertEquals("/batch", request.getPath());
         assertThatJson("{\"api_key\":\"UNIT_TESTING_API_KEY\",\"batch\":[{\"key\":\"value\"}]}")
                 .isEqualTo(request.getBody().readUtf8());
@@ -60,15 +59,15 @@ public class HttpSenderTest {
     @Test
     public void testMultipleItems() throws InterruptedException {
         mockWebServer.enqueue(new MockResponse());
-        JSONObject json = new JSONObject("{'key': 'value'}");
-        JSONObject json2 = new JSONObject("{'key2': 'value2'}");
-        JSONObject json3 = new JSONObject("{'key3': 'value3'}");
+        var json = new JSONObject("{'key': 'value'}");
+        var json2 = new JSONObject("{'key2': 'value2'}");
+        var json3 = new JSONObject("{'key3': 'value3'}");
         List<JSONObject> input = new ArrayList<JSONObject>();
         input.add(json);
         input.add(json2);
         input.add(json3);
         sender.send(input);
-        RecordedRequest request = mockWebServer.takeRequest();
+        var request = mockWebServer.takeRequest();
         assertEquals("/batch", request.getPath());
         assertThatJson("{\"api_key\":\"UNIT_TESTING_API_KEY\",\"batch\":"
                 + "[{\"key\":\"value\"},{\"key2\":\"value2\"},{\"key3\":\"value3\"}]}")
@@ -98,9 +97,9 @@ public class HttpSenderTest {
         assertEquals(success, true);
 
         // Now verify that we only
-        RecordedRequest firstRequest = mockWebServer.takeRequest(0, TimeUnit.MILLISECONDS);
+        var firstRequest = mockWebServer.takeRequest(0, TimeUnit.MILLISECONDS);
         assertEquals(firstRequest.getPath(), "/batch");
-        RecordedRequest secondRequest = mockWebServer.takeRequest(0, TimeUnit.MILLISECONDS);
+        var secondRequest = mockWebServer.takeRequest(0, TimeUnit.MILLISECONDS);
         assertEquals(secondRequest, null);
     }
 
@@ -116,9 +115,9 @@ public class HttpSenderTest {
         assertEquals(success, false);
 
         // Now verify that we only
-        RecordedRequest firstRequest = mockWebServer.takeRequest(0, TimeUnit.MILLISECONDS);
+        var firstRequest = mockWebServer.takeRequest(0, TimeUnit.MILLISECONDS);
         assertEquals(firstRequest.getPath(), "/batch");
-        RecordedRequest secondRequest = mockWebServer.takeRequest(0, TimeUnit.MILLISECONDS);
+        var secondRequest = mockWebServer.takeRequest(0, TimeUnit.MILLISECONDS);
         assertEquals(secondRequest, null);
     }
 
@@ -134,9 +133,9 @@ public class HttpSenderTest {
         assertEquals(success, false);
 
         // Verify we made two requests
-        RecordedRequest firstRequest = mockWebServer.takeRequest(0, TimeUnit.MILLISECONDS);
+        var firstRequest = mockWebServer.takeRequest(0, TimeUnit.MILLISECONDS);
         assertEquals(firstRequest.getPath(), "/batch");
-        RecordedRequest secondRequest = mockWebServer.takeRequest(0, TimeUnit.MILLISECONDS);
+        var secondRequest = mockWebServer.takeRequest(0, TimeUnit.MILLISECONDS);
         assertEquals(secondRequest.getPath(), "/batch");
     }
 }

@@ -53,7 +53,7 @@ public class PostHogTest {
         ph.shutdown();
         assertEquals(1, sender.calls.size());
         assertEquals(1, sender.calls.get(0).size());
-        JSONObject json = sender.calls.get(0).get(0);
+        var json = sender.calls.get(0).get(0);
         // Assert JSON includes the expected distinct_id, event, and timestamp, ignoring
         // any extraneus properties.
         assertThatJson("{\"distinct_id\":\"test id\",\"event\":\"test event\",\"timestamp\":\"" + instantExpected
@@ -85,7 +85,7 @@ public class PostHogTest {
 
     @Test
     public void testCaptureWithProperties() {
-        ph.capture("test id", "test event", new HashMap<String, Object>() {
+        ph.capture("test id", "test event", new HashMap<>() {
             {
                 put("movie_id", 123);
                 put("category", "romcom");
@@ -94,7 +94,7 @@ public class PostHogTest {
         ph.shutdown();
         assertEquals(1, sender.calls.size());
         assertEquals(1, sender.calls.get(0).size());
-        JSONObject json = sender.calls.get(0).get(0);
+        var json = sender.calls.get(0).get(0);
         assertThatJson("{\"distinct_id\":\"test id\",\"event\":\"test event\""
                 + ",\"properties\":{\"movie_id\":123,\"category\":\"romcom\"},\"timestamp\":\"" + instantExpected
                 + "\"}").isEqualTo(new JSONObject(json, "distinct_id", "event", "properties", "timestamp").toString());
@@ -102,7 +102,7 @@ public class PostHogTest {
 
     @Test
     public void testIdentifySimple() {
-        ph.identify("test id", new HashMap<String, Object>() {
+        ph.identify("test id", new HashMap<>() {
             {
                 put("email", "john@doe.com");
                 put("proUser", false);
@@ -111,7 +111,7 @@ public class PostHogTest {
         ph.shutdown();
         assertEquals(1, sender.calls.size());
         assertEquals(1, sender.calls.get(0).size());
-        JSONObject json = sender.calls.get(0).get(0);
+        var json = sender.calls.get(0).get(0);
         assertThatJson("{\"distinct_id\":\"test id\",\"event\":\"$identify\""
                 + ",\"properties\":{\"$set\":{\"email\":\"john@doe.com\",\"proUser\":false}},\"timestamp\":\""
                 + instantExpected + "\"}")
@@ -120,12 +120,12 @@ public class PostHogTest {
 
     @Test
     public void testIdentifyWithSetOnce() {
-        ph.identify("test id", new HashMap<String, Object>() {
+        ph.identify("test id", new HashMap<>() {
             {
                 put("email", "john@doe.com");
                 put("proUser", false);
             }
-        }, new HashMap<String, Object>() {
+        }, new HashMap<>() {
             {
                 put("first_location", "colorado");
                 put("first_number", 5);
@@ -134,7 +134,7 @@ public class PostHogTest {
         ph.shutdown();
         assertEquals(1, sender.calls.size());
         assertEquals(1, sender.calls.get(0).size());
-        JSONObject json = sender.calls.get(0).get(0);
+        var json = sender.calls.get(0).get(0);
         assertThatJson("{\"distinct_id\":\"test id\",\"event\":\"$identify\""
                 + ",\"properties\":{\"$set\":{\"email\":\"john@doe.com\",\"proUser\":false}"
                 + ",\"$set_once\":{\"first_location\":\"colorado\",\"first_number\":5}" + "},\"timestamp\":\""
@@ -145,7 +145,7 @@ public class PostHogTest {
 
     @Test
     public void testSet() {
-        ph.set("test id", new HashMap<String, Object>() {
+        ph.set("test id", new HashMap<>() {
             {
                 put("email", "john@doe.com");
                 put("proUser", false);
@@ -154,7 +154,7 @@ public class PostHogTest {
         ph.shutdown();
         assertEquals(1, sender.calls.size());
         assertEquals(1, sender.calls.get(0).size());
-        JSONObject json = sender.calls.get(0).get(0);
+        var json = sender.calls.get(0).get(0);
         assertThatJson("{\"distinct_id\":\"test id\",\"event\":\"$set\""
                 + ",\"properties\":{\"$set\":{\"email\":\"john@doe.com\",\"proUser\":false}},\"timestamp\":\""
                 + instantExpected + "\"}")
@@ -163,7 +163,7 @@ public class PostHogTest {
 
     @Test
     public void testSetOnce() {
-        ph.setOnce("test id", new HashMap<String, Object>() {
+        ph.setOnce("test id", new HashMap<>() {
             {
                 put("first_location", "colorado");
                 put("first_number", 5);
@@ -172,7 +172,7 @@ public class PostHogTest {
         ph.shutdown();
         assertEquals(1, sender.calls.size());
         assertEquals(1, sender.calls.get(0).size());
-        JSONObject json = sender.calls.get(0).get(0);
+        var json = sender.calls.get(0).get(0);
         assertThatJson("{\"distinct_id\":\"test id\",\"event\":\"$set_once\""
                 + ",\"properties\":{\"$set_once\":{\"first_location\":\"colorado\",\"first_number\":5}"
                 + "},\"timestamp\":\"" + instantExpected + "\"}")
@@ -185,7 +185,7 @@ public class PostHogTest {
         ph.shutdown();
         assertEquals(1, sender.calls.size());
         assertEquals(1, sender.calls.get(0).size());
-        JSONObject json = sender.calls.get(0).get(0);
+        var json = sender.calls.get(0).get(0);
         assertThatJson("{\"distinct_id\":\"test id\",\"event\":\"$create_alias\""
                 + ",\"properties\":{\"distinct_id\":\"test id\",\"alias\":\"second id\"}" + ",\"timestamp\":\""
                 + instantExpected + "\"}")
@@ -219,7 +219,7 @@ public class PostHogTest {
         assertEquals(2, sender.calls.size());
         assertEquals(3, sender.calls.get(0).size());
         assertEquals(1, sender.calls.get(1).size());
-        JSONObject json = sender.calls.get(0).get(0);
+        var json = sender.calls.get(0).get(0);
         assertThatJson(
                 "{\"distinct_id\":\"id1\",\"event\":\"first batch event\",\"timestamp\":\"" + instantExpected + "\"}")
                 .isEqualTo(new JSONObject(json, "distinct_id", "event", "timestamp").toString());
@@ -246,9 +246,9 @@ public class PostHogTest {
         queueManager = new QueueManager.Builder(sender).sleepMs(0).maxTimeInQueue(Duration.ofDays(3))
                 .maxQueueSize(10000).build();
         ph = new PostHog.BuilderWithCustomQueueManager(queueManager).build();
-        String originalInstant = "2020-02-02T02:02:02Z";
-        String secondInstant = "2020-02-03T02:02:02Z";
-        String thirdInstant = "2020-02-09T02:02:02Z";
+        var originalInstant = "2020-02-02T02:02:02Z";
+        var secondInstant = "2020-02-03T02:02:02Z";
+        var thirdInstant = "2020-02-09T02:02:02Z";
         updateInstantNow(originalInstant);
         ph.capture("id1", "first batch event");
         updateInstantNow(secondInstant);
@@ -260,7 +260,7 @@ public class PostHogTest {
         assertEquals(2, sender.calls.size());
         assertEquals(2, sender.calls.get(0).size());
         assertEquals(1, sender.calls.get(1).size());
-        JSONObject json = sender.calls.get(0).get(0);
+        var json = sender.calls.get(0).get(0);
         assertThatJson(
                 "{\"distinct_id\":\"id1\",\"event\":\"first batch event\",\"timestamp\":\"" + originalInstant + "\"}")
                 .isEqualTo(new JSONObject(json, "distinct_id", "event", "timestamp").toString());

@@ -15,9 +15,9 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 
 public class HttpSender implements Sender {
-    private String apiKey;
-    private String host;
-    private OkHttpClient client;
+    private final String apiKey;
+    private final String host;
+    private final OkHttpClient client;
     private int maxRetries;
     private Duration initialRetryInterval;
 
@@ -140,7 +140,7 @@ public class HttpSender implements Sender {
     }
 
     private String getRequestBody(List<JSONObject> events) {
-        JSONObject jsonObject = new JSONObject();
+        var jsonObject = new JSONObject();
         try {
             jsonObject.put("api_key", apiKey);
             jsonObject.put("batch", events);
