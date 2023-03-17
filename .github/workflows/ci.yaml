@@ -1,10 +1,17 @@
 name: CI
 
+# We run CI on PRs targetting main, and pushes to the main branch. We also run
+# on release created events, using the tag name as the version.
 on:
-  pull_request:
   push:
     branches:
-      - main    
+      - main
+  pull_request:
+    branches:
+      - main
+  release:
+    types:
+      - created
 
 jobs:
   ci:
@@ -30,13 +37,13 @@ jobs:
       - name: Set POM version
         # Set the version in the POM to the short commit hash and append
         # -SNAPSHOT to the version. This allows us to test the release process
-        # on branches without having to push a tag. If we are on a tagged
-        # branch, we set the version to the tag name.
+        # on branches without having to push a tag. If we are triggered by a
+        # release event, we set the version to the release version as the tag.
         run: |
-          if [[ $GITHUB_REF == refs/tags/* ]]; then
+          if [[ $GITHUB_EVENT_NAME == release ]]; then
             mvn versions:set -DnewVersion=${GITHUB_REF#refs/tags/} --file posthog/pom.xml
           else
-            mvn versions:set -DnewVersion=${GITHUB_SHA::8}-SNAPSHOT --file posthog/pom.xml
+            mvn versions:set -DnewVersion=$(git rev-parse --short HEAD)-SNAPSHOT --file posthog/pom.xml
           fi
 
       - name: Build with Maven
@@ -47,18 +54,18 @@ jobs:
 
       - name: Release to Maven Central
         # Deploy the Java jar artifact to Maven Central using mvn deploy. If we
-        # are on a tagged branch, we use the release profile, and we set the
-        # version  the
-        # release version as the tag name. Otherwise, we set the version to the
-        # commit hash and append -SNAPSHOT to the version.
+        # are triggered by a release event, we use the release profile, and we
+        # set the version  the release version as the tag name. Otherwise, we
+        # set the version to the commit hash and append -SNAPSHOT to the
+        # version.
         #
         # This allows us to test the release process on branches without having
-        # to push a tag.
+        # to push a release.
         run: |
-          if [[ $GITHUB_REF == refs/tags/* ]]; then
-            mvn deploy --file posthog/pom.xml -DskipTests --batch-mode --show-version -Prelease
+          if [[ $GITHUB_EVENT_NAME == release ]]; then
+            mvn deploy --file posthog/pom.xml --batch-mode --show-version -P release
           else
-            mvn deploy --file posthog/pom.xml -DskipTests --batch-mode --show-version
+            mvn deploy --file posthog/pom.xml --batch-mode --show-version
           fi
         env:
           GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
