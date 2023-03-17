@@ -7,7 +7,7 @@ import org.json.JSONObject;
 
 public class TestSender implements Sender {
 
-    public List<List<JSONObject>> calls = new ArrayList<>();
+    public List<List<JSONObject>> calls = new ArrayList<List<JSONObject>>();
 
     TestSender() {
     }

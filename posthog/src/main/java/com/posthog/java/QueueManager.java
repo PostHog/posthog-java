@@ -9,14 +9,14 @@ import java.util.List;
 import org.json.JSONObject;
 
 public class QueueManager implements Runnable {
-    static class QueuePtr {
+    class QueuePtr {
         // TODO: not sure if there's a datastructure in Java that gives me these
         // operations efficiently, specifically retrieveAndReset
         // Not sure if LinkedList and JSONObject are good choices here
-        public List<JSONObject> ptr = new LinkedList<>();
+        public List<JSONObject> ptr = new LinkedList<JSONObject>();
 
         public QueuePtr() {
-        }
+        };
 
         public synchronized int size() {
             return ptr.size();
@@ -35,19 +35,19 @@ public class QueueManager implements Runnable {
                 return Collections.emptyList();
             }
             List<JSONObject> cur = ptr;
-            ptr = new LinkedList<>();
+            ptr = new LinkedList<JSONObject>();
             return cur;
         }
     }
 
-    private final QueuePtr queue = new QueuePtr();
+    private QueuePtr queue = new QueuePtr();
     private volatile boolean stop = false;
     private Instant sendAfter;
     // builder inputs
-    private final Sender sender;
-    private final int maxQueueSize;
-    private final Duration maxTimeInQueue;
-    private final int sleepMs;
+    private Sender sender;
+    private int maxQueueSize;
+    private Duration maxTimeInQueue;
+    private int sleepMs;
 
     public static class Builder {
         // required
@@ -102,7 +102,7 @@ public class QueueManager implements Runnable {
     }
 
     public void sendAll() {
-        var toSend = queue.retrieveAndReset();
+        List<JSONObject> toSend = queue.retrieveAndReset();
         updateSendAfter(); // after queue reset but before sending as the latter could take a long time
         if (!toSend.isEmpty()) {
             sender.send(toSend);
