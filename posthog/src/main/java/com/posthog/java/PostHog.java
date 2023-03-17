@@ -9,7 +9,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 public class PostHog {
-    private final QueueManager queueManager;
+    private QueueManager queueManager;
     private Thread queueManagerThread;
 
     private static abstract class BuilderBase {
@@ -107,7 +107,7 @@ public class PostHog {
      *                          set without overwriting previous values.
      */
     public void identify(String distinctId, Map<String, Object> properties, Map<String, Object> propertiesSetOnce) {
-        var props = new HashMap<String, Object>();
+        Map<String, Object> props = new HashMap<String, Object>();
         if (properties != null) {
             props.put("$set", properties);
         }
@@ -137,7 +137,7 @@ public class PostHog {
      *                   overriden.
      */
     public void alias(String distinctId, String alias) {
-        var props = new HashMap<String, Object>() {
+        Map<String, Object> props = new HashMap<String, Object>() {
             {
                 put("distinct_id", distinctId);
                 put("alias", alias);
@@ -153,7 +153,7 @@ public class PostHog {
      * @param properties an array with any person properties you'd like to set.
      */
     public void set(String distinctId, Map<String, Object> properties) {
-        var props = new HashMap<String, Object>() {
+        Map<String, Object> props = new HashMap<String, Object>() {
             {
                 put("$set", properties);
             }
@@ -169,7 +169,7 @@ public class PostHog {
      *                   Previous values will not be overwritten.
      */
     public void setOnce(String distinctId, Map<String, Object> properties) {
-        var props = new HashMap<String, Object>() {
+        Map<String, Object> props = new HashMap<String, Object>() {
             {
                 put("$set_once", properties);
             }
@@ -178,7 +178,7 @@ public class PostHog {
     }
 
     private JSONObject getEventJson(String event, String distinctId, Map<String, Object> properties) {
-        var eventJson = new JSONObject();
+        JSONObject eventJson = new JSONObject();
         try {
             // Ensure that we generate an identifier for this event such that we can e.g.
             // deduplicate server-side any duplicates we may receive.
