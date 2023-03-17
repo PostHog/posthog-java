@@ -5,5 +5,5 @@ import java.util.List;
 import org.json.JSONObject;
 
 public interface Sender {
-    void send(List<JSONObject> events);
+    public Boolean send(List<JSONObject> events);
 }

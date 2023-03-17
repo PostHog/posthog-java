@@ -7,25 +7,60 @@ on:
       - main    
 
 jobs:
-  run_tests:
-    name: Tests
+  ci:
+    name: Package, Test, and Release
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout the repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Set up JDK
-        uses: actions/setup-java@v1
+        uses: actions/setup-java@v3
         with:
           java-version: 17
+          distribution: 'adopt'
+          server-id: ossrh
+          server-username: MAVEN_USERNAME
+          server-password: MAVEN_PASSWORD
+          gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
+          gpg-passphrase: GPG_PASSPHRASE
+          cache: maven
 
-      - name: Cache Maven packages
-        uses: actions/cache@v2
-        with:
-          path: ~/.m2
-          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
-          restore-keys: ${{ runner.os }}-m2
+      - name: Set POM version
+        # Set the version in the POM to the short commit hash and append
+        # -SNAPSHOT to the version. This allows us to test the release process
+        # on branches without having to push a tag. If we are on a tagged
+        # branch, we set the version to the tag name.
+        run: |
+          if [[ $GITHUB_REF == refs/tags/* ]]; then
+            mvn versions:set -DnewVersion=${GITHUB_REF#refs/tags/} --file posthog/pom.xml
+          else
+            mvn versions:set -DnewVersion=${GITHUB_SHA::8}-SNAPSHOT --file posthog/pom.xml
+          fi
 
-      - name: Run tests with Maven
-        run: mvn test --file posthog/pom.xml
+      - name: Build with Maven
+        run: mvn package --file posthog/pom.xml -DskipTests --batch-mode --show-version
+
+      - name: Run tests
+        run: mvn test --file posthog/pom.xml --batch-mode --show-version
+
+      - name: Release to Maven Central
+        # Deploy the Java jar artifact to Maven Central using mvn deploy. If we
+        # are on a tagged branch, we use the release profile, and we set the
+        # version  the
+        # release version as the tag name. Otherwise, we set the version to the
+        # commit hash and append -SNAPSHOT to the version.
+        #
+        # This allows us to test the release process on branches without having
+        # to push a tag.
+        run: |
+          if [[ $GITHUB_REF == refs/tags/* ]]; then
+            mvn deploy --file posthog/pom.xml -DskipTests --batch-mode --show-version -Prelease
+          else
+            mvn deploy --file posthog/pom.xml -DskipTests --batch-mode --show-version
+          fi
+        env:
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+          MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
+          MAVEN_PASSWORD: ${{ secrets.OSSRH_PASSWORD }}

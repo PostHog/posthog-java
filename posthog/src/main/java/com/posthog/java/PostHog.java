@@ -3,6 +3,7 @@ package com.posthog.java;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -179,6 +180,9 @@ public class PostHog {
     private JSONObject getEventJson(String event, String distinctId, Map<String, Object> properties) {
         var eventJson = new JSONObject();
         try {
+            // Ensure that we generate an identifier for this event such that we can e.g.
+            // deduplicate server-side any duplicates we may receive.
+            eventJson.put("uuid", UUID.randomUUID().toString());
             eventJson.put("timestamp", Instant.now().toString());
             eventJson.put("distinct_id", distinctId);
             eventJson.put("event", event);
