@@ -97,9 +97,9 @@ public class HttpSenderTest {
         assertEquals(success, true);
 
         // Now verify that we only
-        RecordedRequest firstRequest = mockWebServer.takeRequest(0, TimeUnit.MILLISECONDS);
+        var firstRequest = mockWebServer.takeRequest(0, TimeUnit.MILLISECONDS);
         assertEquals(firstRequest.getPath(), "/batch");
-        RecordedRequest secondRequest = mockWebServer.takeRequest(0, TimeUnit.MILLISECONDS);
+        var secondRequest = mockWebServer.takeRequest(0, TimeUnit.MILLISECONDS);
         assertEquals(secondRequest, null);
     }
 
@@ -115,9 +115,9 @@ public class HttpSenderTest {
         assertEquals(success, false);
 
         // Now verify that we only
-        RecordedRequest firstRequest = mockWebServer.takeRequest(0, TimeUnit.MILLISECONDS);
+        var firstRequest = mockWebServer.takeRequest(0, TimeUnit.MILLISECONDS);
         assertEquals(firstRequest.getPath(), "/batch");
-        RecordedRequest secondRequest = mockWebServer.takeRequest(0, TimeUnit.MILLISECONDS);
+        var secondRequest = mockWebServer.takeRequest(0, TimeUnit.MILLISECONDS);
         assertEquals(secondRequest, null);
     }
 
@@ -133,9 +133,9 @@ public class HttpSenderTest {
         assertEquals(success, false);
 
         // Verify we made two requests
-        RecordedRequest firstRequest = mockWebServer.takeRequest(0, TimeUnit.MILLISECONDS);
+        var firstRequest = mockWebServer.takeRequest(0, TimeUnit.MILLISECONDS);
         assertEquals(firstRequest.getPath(), "/batch");
-        RecordedRequest secondRequest = mockWebServer.takeRequest(0, TimeUnit.MILLISECONDS);
+        var secondRequest = mockWebServer.takeRequest(0, TimeUnit.MILLISECONDS);
         assertEquals(secondRequest.getPath(), "/batch");
     }
 }
