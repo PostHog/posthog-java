@@ -1,10 +1,16 @@
 name: CI
 
+# We run CI on PRs targetting main, and pushes to the main branch. We also run
+# on tags, which trigger the release process to Maven Central.
 on:
-  pull_request:
   push:
     branches:
-      - main    
+      - main
+    tags:
+      - '*'
+  pull_request:
+    branches:
+      - main
 
 jobs:
   ci:
