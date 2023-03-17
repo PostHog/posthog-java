@@ -63,7 +63,7 @@ jobs:
         # to push a release.
         run: |
           if [[ $GITHUB_EVENT_NAME == release ]]; then
-            mvn deploy --file posthog/pom.xml --batch-mode --show-version -P release
+            mvn release:perform --file posthog/pom.xml --batch-mode --show-version
           else
             mvn deploy --file posthog/pom.xml --batch-mode --show-version
           fi
