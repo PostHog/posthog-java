@@ -150,4 +150,42 @@ public class HttpSender implements Sender {
         return jsonObject.toString();
     }
 
+    public JSONObject post(String route, String distinctId) {
+        JSONObject bodyJSON = new JSONObject();
+        try {
+            bodyJSON.put("api_key", apiKey);
+            bodyJSON.put("distinct_id", distinctId);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        Response response = null;
+
+        MediaType JSON = MediaType.parse("application/json; charset=utf-8");
+        RequestBody body = RequestBody.create(bodyJSON.toString(), JSON);
+        Request request = new Request.Builder().url(host + route).post(body).build();
+        Call call = client.newCall(request);
+
+        try {
+            response = call.execute();
+
+            if (response.isSuccessful()) {
+                JSONObject responseJSON = new JSONObject(response.body().string());
+
+                return responseJSON;
+            }
+
+            if (response.code() >= 400 && response.code() < 500) {
+                System.err.println("Error calling API: " + response.body().string());
+                return null;
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            if (response != null) {
+                response.close();
+            }
+        }
+        return null;
+    }
 }
