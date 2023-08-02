@@ -43,8 +43,10 @@ public class PostHog {
 
     public static class BuilderWithCustomQueueManager extends BuilderBase {
 
-        public BuilderWithCustomQueueManager(QueueManager queueManager) {
+        public BuilderWithCustomQueueManager(QueueManager queueManager, Sender... sender) {
             this.queueManager = queueManager;
+            if (sender.length > 0)
+                this.sender = sender[0];
         }
 
         public PostHog build() {

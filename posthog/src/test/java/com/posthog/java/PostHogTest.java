@@ -44,7 +44,7 @@ public class PostHogTest {
         // separately
         queueManager = new QueueManager.Builder(sender).sleepMs(0).maxTimeInQueue(Duration.ofDays(5)).maxQueueSize(1)
                 .build();
-        ph = new PostHog.BuilderWithCustomQueueManager(queueManager).build();
+        ph = new PostHog.BuilderWithCustomQueueManager(queueManager, sender).build();
     }
 
     @Test
@@ -274,4 +274,33 @@ public class PostHogTest {
                 .isEqualTo(new JSONObject(json, "distinct_id", "event", "timestamp").toString());
 
     }
+
+    @Test
+    public void testFlagActive() throws InterruptedException {
+        boolean flag = ph.isFeatureFlagEnabled("test-flag", "test-user");
+
+        assertEquals(true,flag);
+    }
+
+    @Test
+    public void testFlagInactive() throws InterruptedException {
+        boolean flag = ph.isFeatureFlagEnabled("untest-flag", "test-user");
+
+        assertEquals(false,flag);
+    }
+
+    @Test
+    public void testGetFlagActive() throws InterruptedException {
+        String flag = ph.getFeatureFlag("test-flag", "test-user");
+
+        assertEquals("true", flag);
+    }
+
+    @Test
+    public void testGetFlagInactive() throws InterruptedException {
+        String flag = ph.getFeatureFlag("untest-flag", "test-user");
+
+        assertEquals(null, flag);
+    }
+
 }

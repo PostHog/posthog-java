@@ -17,6 +17,7 @@ import org.junit.Test;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
+import okhttp3.mockwebserver.SocketPolicy;
 
 public class HttpSenderTest {
 
@@ -139,4 +140,52 @@ public class HttpSenderTest {
         RecordedRequest secondRequest = mockWebServer.takeRequest(0, TimeUnit.MILLISECONDS);
         assertEquals(secondRequest.getPath(), "/batch");
     }
+
+    @Test
+    public void testPostSucess() throws InterruptedException {
+        String response = "{\n" + //
+                "    \"config\": {\n" + //
+                "        \"enable_collect_everything\": true\n" + //
+                "    },\n" + //
+                "    \"toolbarParams\": {},\n" + //
+                "    \"isAuthenticated\": false,\n" + //
+                "    \"supportedCompression\": [\n" + //
+                "        \"gzip\",\n" + //
+                "        \"gzip-js\"\n" + //
+                "    ],\n" + //
+                "    \"featureFlags\": {\n" + //
+                "        \"test-flag\": true\n" + //
+                "    },\n" + //
+                "    \"sessionRecording\": false,\n" + //
+                "    \"errorsWhileComputingFlags\": false,\n" + //
+                "    \"featureFlagPayloads\": {\n" + //
+                "        \"test-flag\": \"true\"\n" + //
+                "    },\n" + //
+                "    \"capturePerformance\": false,\n" + //
+                "    \"autocapture_opt_out\": true,\n" + //
+                "    \"autocaptureExceptions\": false,\n" + //
+                "    \"siteApps\": []\n" + //
+                "}";
+        mockWebServer.enqueue(new MockResponse().setBody(response));
+        JSONObject result = sender.post("/decide", "1");
+        RecordedRequest request = mockWebServer.takeRequest();
+        assertEquals("/decide", request.getPath());
+        assertThatJson(response).isEqualTo(result.toString());
+    }
+
+    @Test
+    public void testPostFail() throws InterruptedException {
+        mockWebServer.enqueue(new MockResponse().setResponseCode(400));
+        JSONObject result = sender.post("/decide", "1");
+        assertEquals(null, result);
+    }
+
+    @Test
+    public void testPostException() throws InterruptedException {
+        mockWebServer.enqueue(new MockResponse().setSocketPolicy(SocketPolicy.DISCONNECT_AT_START));
+        JSONObject result = sender.post("/decide", "1");
+        assertEquals(null, result);
+    }
+
+
 }

@@ -16,4 +16,32 @@ public class TestSender implements Sender {
         calls.add(events);
         return true;
     }
+
+    public JSONObject post(String route, String distinctId) {
+        String response = "{\n" + //
+                "    \"config\": {\n" + //
+                "        \"enable_collect_everything\": true\n" + //
+                "    },\n" + //
+                "    \"toolbarParams\": {},\n" + //
+                "    \"isAuthenticated\": false,\n" + //
+                "    \"supportedCompression\": [\n" + //
+                "        \"gzip\",\n" + //
+                "        \"gzip-js\"\n" + //
+                "    ],\n" + //
+                "    \"featureFlags\": {\n" + //
+                "        \"test-flag\": true\n" + //
+                "    },\n" + //
+                "    \"sessionRecording\": false,\n" + //
+                "    \"errorsWhileComputingFlags\": false,\n" + //
+                "    \"featureFlagPayloads\": {\n" + //
+                "        \"test-flag\": \"true\"\n" + //
+                "    },\n" + //
+                "    \"capturePerformance\": false,\n" + //
+                "    \"autocapture_opt_out\": true,\n" + //
+                "    \"autocaptureExceptions\": false,\n" + //
+                "    \"siteApps\": []\n" + //
+                "}";
+
+        return new JSONObject(response);
+    }
 }
