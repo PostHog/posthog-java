@@ -4,6 +4,8 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.Calendar;
+import java.util.Date;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -12,6 +14,9 @@ public class PostHog {
     private QueueManager queueManager;
     private Thread queueManagerThread;
     private Sender sender;
+    private HashMap<String, HashMap<String, String>> featureFlags;
+    private Date lastFeatureFlagUpdate;
+    private static int updateIntervalInMinutes = 5;
 
     private static abstract class BuilderBase {
         protected QueueManager queueManager;
@@ -57,6 +62,7 @@ public class PostHog {
     private PostHog(BuilderBase builder) {
         this.queueManager = builder.queueManager;
         this.sender = builder.sender;
+        this.featureFlags = new HashMap<>();
         startQueueManager();
     }
 
@@ -208,14 +214,7 @@ public class PostHog {
      *                   not be null or empty.
      */
     public boolean isFeatureFlagEnabled(String featureFlag, String distinctId) {
-        JSONObject response = sender.post("/decide/?v=3", distinctId);
-
-        try {
-            return response.getJSONObject("featureFlags").getBoolean(featureFlag);
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-        return false;
+        return getFeatureFlags(distinctId).get(featureFlag) != null;
     }
 
     /**
@@ -226,14 +225,39 @@ public class PostHog {
      *                   not be null or empty.
      */
     public String getFeatureFlag(String featureFlag, String distinctId) {
-        JSONObject response = sender.post("/decide/?v=3", distinctId);
-
-        try {
-            return response.getJSONObject("featureFlagPayloads").getString(featureFlag);
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-        return null;
+        return getFeatureFlags(distinctId).get(featureFlag);
     }
 
+    private HashMap<String, String> getFeatureFlags(String distinctId) {
+        Date fiveMinAgo = new Date(
+            Calendar.getInstance().getTimeInMillis() - (PostHog.updateIntervalInMinutes * 60 * 1000)
+        );
+        if (this.lastFeatureFlagUpdate.before(fiveMinAgo))
+            return updateFeatureFlags(distinctId);
+        HashMap<String, String> distinctFeatureFlags = featureFlags.get(distinctId);
+        if (distinctFeatureFlags == null)
+            return updateFeatureFlags(distinctId);
+
+        return distinctFeatureFlags;
+    }
+
+    private HashMap<String, String> updateFeatureFlags(String distinctId) {
+        JSONObject response = sender.post("/decide/?v=3", distinctId);
+
+        HashMap<String, String> distinctFeatureFlags = new HashMap<>();
+
+        JSONObject flags = response.getJSONObject("featureFlags");
+        JSONObject payloads = response.getJSONObject("featureFlagPayloads");
+        for (String flag : flags.keySet()) {
+            String payload = flags.get(flag).toString();
+            if (payloads.has(flag)) 
+                payload = payloads.getString(flag);
+            distinctFeatureFlags.put(flag, payload);
+        }
+        this.featureFlags.put(distinctId, distinctFeatureFlags);
+
+        this.lastFeatureFlagUpdate = new Date();
+
+        return distinctFeatureFlags;
+    }
 }
