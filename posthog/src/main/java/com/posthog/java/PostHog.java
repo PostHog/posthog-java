@@ -14,9 +14,6 @@ public class PostHog {
     private QueueManager queueManager;
     private Thread queueManagerThread;
     private Sender sender;
-    private HashMap<String, HashMap<String, String>> featureFlags;
-    private Date lastFeatureFlagUpdate;
-    private static int updateIntervalInMinutes = 5;
 
     private static abstract class BuilderBase {
         protected QueueManager queueManager;
@@ -62,7 +59,6 @@ public class PostHog {
     private PostHog(BuilderBase builder) {
         this.queueManager = builder.queueManager;
         this.sender = builder.sender;
-        this.featureFlags = new HashMap<>();
         startQueueManager();
     }
 
@@ -229,22 +225,9 @@ public class PostHog {
     }
 
     private HashMap<String, String> getFeatureFlags(String distinctId) {
-        Date fiveMinAgo = new Date(
-            Calendar.getInstance().getTimeInMillis() - (PostHog.updateIntervalInMinutes * 60 * 1000)
-        );
-        if (this.lastFeatureFlagUpdate.before(fiveMinAgo))
-            return updateFeatureFlags(distinctId);
-        HashMap<String, String> distinctFeatureFlags = featureFlags.get(distinctId);
-        if (distinctFeatureFlags == null)
-            return updateFeatureFlags(distinctId);
-
-        return distinctFeatureFlags;
-    }
-
-    private HashMap<String, String> updateFeatureFlags(String distinctId) {
         JSONObject response = sender.post("/decide/?v=3", distinctId);
 
-        HashMap<String, String> distinctFeatureFlags = new HashMap<>();
+        HashMap<String, String> featureFlags = new HashMap<>();
 
         JSONObject flags = response.getJSONObject("featureFlags");
         JSONObject payloads = response.getJSONObject("featureFlagPayloads");
@@ -252,12 +235,9 @@ public class PostHog {
             String payload = flags.get(flag).toString();
             if (payloads.has(flag)) 
                 payload = payloads.getString(flag);
-            distinctFeatureFlags.put(flag, payload);
+            featureFlags.put(flag, payload);
         }
-        this.featureFlags.put(distinctId, distinctFeatureFlags);
 
-        this.lastFeatureFlagUpdate = new Date();
-
-        return distinctFeatureFlags;
+        return featureFlags;
     }
 }
