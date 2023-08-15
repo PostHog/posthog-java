@@ -159,7 +159,7 @@ public class HttpSenderTest {
                 "    \"sessionRecording\": false,\n" + //
                 "    \"errorsWhileComputingFlags\": false,\n" + //
                 "    \"featureFlagPayloads\": {\n" + //
-                "        \"test-flag\": \"true\"\n" + //
+                "        \"test-flag\": \"{\\\"key\\\": \\\"value\\\"}\"\n" + //
                 "    },\n" + //
                 "    \"capturePerformance\": false,\n" + //
                 "    \"autocapture_opt_out\": true,\n" + //

@@ -207,7 +207,7 @@ public class PostHog {
      * @param distinctId which uniquely identifies your user in your database. Must
      *                   not be null or empty.
      */
-    public boolean getFeatureFlag(String featureFlag, String distinctId) {
+    public boolean isFeatureFlag(String featureFlag, String distinctId) {
         return getFeatureFlags(distinctId).get(featureFlag) != null;
     }
 
@@ -218,8 +218,19 @@ public class PostHog {
      * @param distinctId which uniquely identifies your user in your database. Must
      *                   not be null or empty.
      */
-    public String getFeatureFlagPayload(String featureFlag, String distinctId) {
+    public String getFeatureFlag(String featureFlag, String distinctId) {
         return getFeatureFlags(distinctId).get(featureFlag);
+    }
+
+    /**
+     * 
+     * @param featureFlag which uniquely identifies your feature flag
+     *
+     * @param distinctId which uniquely identifies your user in your database. Must
+     *                   not be null or empty.
+     */
+    public String getFeatureFlagPayload(String featureFlag, String distinctId) {
+        return getFeatureFlagPayloads(distinctId).get(featureFlag);
     }
 
     private HashMap<String, String> getFeatureFlags(String distinctId) {
@@ -228,14 +239,24 @@ public class PostHog {
         HashMap<String, String> featureFlags = new HashMap<>();
 
         JSONObject flags = response.getJSONObject("featureFlags");
-        JSONObject payloads = response.getJSONObject("featureFlagPayloads");
         for (String flag : flags.keySet()) {
-            String payload = flags.get(flag).toString();
-            if (payloads.has(flag)) 
-                payload = payloads.getString(flag);
-            featureFlags.put(flag, payload);
+            featureFlags.put(flag, flags.get(flag).toString());
         }
 
         return featureFlags;
+    }
+
+    private HashMap<String, String> getFeatureFlagPayloads(String distinctId) {
+        JSONObject response = sender.post("/decide/?v=3", distinctId);
+
+        HashMap<String, String> flagPayloads = new HashMap<>();
+
+        JSONObject payloads = response.getJSONObject("featureFlagPayloads");
+        for (String flag : payloads.keySet()) {
+            String payload = payloads.get(flag).toString();
+            flagPayloads.put(flag, payload);
+        }
+
+        return flagPayloads;
     }
 }

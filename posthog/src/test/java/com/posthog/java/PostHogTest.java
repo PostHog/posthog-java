@@ -277,23 +277,37 @@ public class PostHogTest {
 
     @Test
     public void testFlagActive() throws InterruptedException {
-        boolean flag = ph.getFeatureFlag("test-flag", "test-user");
+        boolean flag = ph.isFeatureFlag("test-flag", "test-user");
 
         assertEquals(true,flag);
     }
 
     @Test
     public void testFlagInactive() throws InterruptedException {
-        boolean flag = ph.getFeatureFlag("untest-flag", "test-user");
+        boolean flag = ph.isFeatureFlag("untest-flag", "test-user");
 
         assertEquals(false,flag);
+    }
+
+    @Test
+    public void testFlagValueActive() throws InterruptedException {
+        String flag = ph.getFeatureFlag("test-flag", "test-user");
+
+        assertEquals("true",flag);
+    }
+
+    @Test
+    public void testFlagValueInactive() throws InterruptedException {
+        String flag = ph.getFeatureFlag("untest-flag", "test-user");
+
+        assertEquals(null,flag);
     }
 
     @Test
     public void testGetFlagActive() throws InterruptedException {
         String flag = ph.getFeatureFlagPayload("test-flag", "test-user");
 
-        assertEquals("true", flag);
+        assertEquals("{\"key\": \"value\"}", flag);
     }
 
     @Test
