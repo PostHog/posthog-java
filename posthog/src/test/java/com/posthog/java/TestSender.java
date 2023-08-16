@@ -29,7 +29,8 @@ public class TestSender implements Sender {
                 "        \"gzip-js\"\n" + //
                 "    ],\n" + //
                 "    \"featureFlags\": {\n" + //
-                "        \"test-flag\": true\n" + //
+                "        \"test-flag\": true,\n" + //
+                "        \"false-flag\": false\n" + //
                 "    },\n" + //
                 "    \"sessionRecording\": false,\n" + //
                 "    \"errorsWhileComputingFlags\": false,\n" + //

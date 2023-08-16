@@ -283,6 +283,13 @@ public class PostHogTest {
     }
 
     @Test
+    public void testFlagFalse() throws InterruptedException {
+        boolean flag = ph.isFeatureFlag("false-flag", "test-user");
+
+        assertEquals(false,flag);
+    }
+
+    @Test
     public void testFlagInactive() throws InterruptedException {
         boolean flag = ph.isFeatureFlag("untest-flag", "test-user");
 

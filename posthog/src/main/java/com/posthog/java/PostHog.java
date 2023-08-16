@@ -208,7 +208,9 @@ public class PostHog {
      *                   not be null or empty.
      */
     public boolean isFeatureFlag(String featureFlag, String distinctId) {
-        return getFeatureFlags(distinctId).get(featureFlag) != null;
+        if (getFeatureFlags(distinctId).get(featureFlag) == null)
+            return false;
+        return Boolean.parseBoolean(getFeatureFlags(distinctId).get(featureFlag));
     }
 
     /**
