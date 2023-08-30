@@ -277,21 +277,21 @@ public class PostHogTest {
 
     @Test
     public void testFlagActive() throws InterruptedException {
-        boolean flag = ph.isFeatureFlag("test-flag", "test-user");
+        boolean flag = ph.isFeatureFlagEnabled("test-flag", "test-user");
 
         assertEquals(true,flag);
     }
 
     @Test
     public void testFlagFalse() throws InterruptedException {
-        boolean flag = ph.isFeatureFlag("false-flag", "test-user");
+        boolean flag = ph.isFeatureFlagEnabled("false-flag", "test-user");
 
         assertEquals(false,flag);
     }
 
     @Test
     public void testFlagInactive() throws InterruptedException {
-        boolean flag = ph.isFeatureFlag("untest-flag", "test-user");
+        boolean flag = ph.isFeatureFlagEnabled("untest-flag", "test-user");
 
         assertEquals(false,flag);
     }
