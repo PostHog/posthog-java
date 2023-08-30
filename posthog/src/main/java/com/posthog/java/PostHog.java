@@ -11,9 +11,11 @@ import org.json.JSONObject;
 public class PostHog {
     private QueueManager queueManager;
     private Thread queueManagerThread;
+    private Sender sender;
 
     private static abstract class BuilderBase {
         protected QueueManager queueManager;
+        protected Sender sender;
     }
 
     public static class Builder extends BuilderBase {
@@ -33,16 +35,18 @@ public class PostHog {
         }
 
         public PostHog build() {
-            Sender sender = new HttpSender.Builder(apiKey).host(host).build();
-            this.queueManager = new QueueManager.Builder(sender).build();
+            this.sender = new HttpSender.Builder(apiKey).host(host).build();
+            this.queueManager = new QueueManager.Builder(this.sender).build();
             return new PostHog(this);
         }
     }
 
     public static class BuilderWithCustomQueueManager extends BuilderBase {
 
-        public BuilderWithCustomQueueManager(QueueManager queueManager) {
+        public BuilderWithCustomQueueManager(QueueManager queueManager, Sender... sender) {
             this.queueManager = queueManager;
+            if (sender.length > 0)
+                this.sender = sender[0];
         }
 
         public PostHog build() {
@@ -52,6 +56,7 @@ public class PostHog {
 
     private PostHog(BuilderBase builder) {
         this.queueManager = builder.queueManager;
+        this.sender = builder.sender;
         startQueueManager();
     }
 
@@ -193,5 +198,73 @@ public class PostHog {
             e.printStackTrace();
         }
         return eventJson;
+    }
+
+    /**
+     * 
+     * @param featureFlag which uniquely identifies your feature flag
+     *
+     * @param distinctId which uniquely identifies your user in your database. Must
+     *                   not be null or empty.
+     * 
+     * @return           whether the feature flag is enabled or not
+     */
+    public boolean isFeatureFlagEnabled(String featureFlag, String distinctId) {
+        if (getFeatureFlags(distinctId).get(featureFlag) == null)
+            return false;
+        return Boolean.parseBoolean(getFeatureFlags(distinctId).get(featureFlag));
+    }
+
+    /**
+     * 
+     * @param featureFlag which uniquely identifies your feature flag
+     *
+     * @param distinctId which uniquely identifies your user in your database. Must
+     *                   not be null or empty.
+     * 
+     * @return           Variant of the feature flag
+     */
+    public String getFeatureFlag(String featureFlag, String distinctId) {
+        return getFeatureFlags(distinctId).get(featureFlag);
+    }
+
+    /**
+     * 
+     * @param featureFlag which uniquely identifies your feature flag
+     *
+     * @param distinctId which uniquely identifies your user in your database. Must
+     *                   not be null or empty.
+     * 
+     * @return           The feature flag payload, if it exists
+     */
+    public String getFeatureFlagPayload(String featureFlag, String distinctId) {
+        return getFeatureFlagPayloads(distinctId).get(featureFlag);
+    }
+
+    private HashMap<String, String> getFeatureFlags(String distinctId) {
+        JSONObject response = sender.post("/decide/?v=3", distinctId);
+
+        HashMap<String, String> featureFlags = new HashMap<>();
+
+        JSONObject flags = response.getJSONObject("featureFlags");
+        for (String flag : flags.keySet()) {
+            featureFlags.put(flag, flags.get(flag).toString());
+        }
+
+        return featureFlags;
+    }
+
+    private HashMap<String, String> getFeatureFlagPayloads(String distinctId) {
+        JSONObject response = sender.post("/decide/?v=3", distinctId);
+
+        HashMap<String, String> flagPayloads = new HashMap<>();
+
+        JSONObject payloads = response.getJSONObject("featureFlagPayloads");
+        for (String flag : payloads.keySet()) {
+            String payload = payloads.get(flag).toString();
+            flagPayloads.put(flag, payload);
+        }
+
+        return flagPayloads;
     }
 }
