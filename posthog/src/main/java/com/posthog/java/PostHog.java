@@ -209,7 +209,7 @@ public class PostHog {
      * 
      * @return           If the feature flag is enabled or not
      */
-    public boolean isFeatureFlag(String featureFlag, String distinctId) {
+    public boolean isFeatureFlagEnabled(String featureFlag, String distinctId) {
         if (getFeatureFlags(distinctId).get(featureFlag) == null)
             return false;
         return Boolean.parseBoolean(getFeatureFlags(distinctId).get(featureFlag));
@@ -222,7 +222,7 @@ public class PostHog {
      * @param distinctId which uniquely identifies your user in your database. Must
      *                   not be null or empty.
      * 
-     * @return           A string of feature flag is enabled or not
+     * @return           A string of feature flag status
      */
     public String getFeatureFlag(String featureFlag, String distinctId) {
         return getFeatureFlags(distinctId).get(featureFlag);
