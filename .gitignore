@@ -5,3 +5,5 @@
 */target/
 .vscode/
 .idea/
+./example/example.iml
+./posthog/posthog.iml
