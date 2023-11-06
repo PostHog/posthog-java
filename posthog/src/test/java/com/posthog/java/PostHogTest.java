@@ -101,6 +101,21 @@ public class PostHogTest {
     }
 
     @Test
+    public void testCaptureIncludesLibProperty() {
+        ph.capture("test id", "test event", new HashMap<String, Object>() {
+            {
+                put("movie_id", 123);
+                put("category", "romcom");
+            }
+        });
+        ph.shutdown();
+        assertEquals(1, sender.calls.size());
+        assertEquals(1, sender.calls.get(0).size());
+        JSONObject json = sender.calls.get(0).get(0);
+        assertThatJson("{\"$lib\":\"posthog-java\"}").isEqualTo(new JSONObject(json, "$lib").toString());
+    }
+
+    @Test
     public void testIdentifySimple() {
         ph.identify("test id", new HashMap<String, Object>() {
             {
