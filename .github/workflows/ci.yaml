@@ -51,23 +51,3 @@ jobs:
 
       - name: Run tests
         run: mvn test --file posthog/pom.xml --batch-mode --show-version
-
-      - name: Release to Maven Central
-        # Deploy the Java jar artifact to Maven Central using mvn deploy. If we
-        # are triggered by a release event, we use the release profile, and we
-        # set the version  the release version as the tag name. Otherwise, we
-        # set the version to the commit hash and append -SNAPSHOT to the
-        # version.
-        #
-        # This allows us to test the release process on branches without having
-        # to push a release.
-        run: |
-          if [[ $GITHUB_EVENT_NAME == release ]]; then
-            mvn deploy --file posthog/pom.xml --batch-mode --show-version -P release
-          else
-            mvn deploy --file posthog/pom.xml --batch-mode --show-version
-          fi
-        env:
-          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
-          MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
-          MAVEN_PASSWORD: ${{ secrets.OSSRH_PASSWORD }}
