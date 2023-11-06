@@ -191,6 +191,7 @@ public class PostHog {
             eventJson.put("timestamp", Instant.now().toString());
             eventJson.put("distinct_id", distinctId);
             eventJson.put("event", event);
+            eventJson.put("$lib", "posthog-java");
             if (properties != null) {
                 eventJson.put("properties", properties);
             }
