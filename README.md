@@ -9,14 +9,6 @@ User guide available on
 We're using Sonatype OSSRH to host our open source project binaries. Docs:
 https://central.sonatype.org/publish/publish-guide/
 
-### Deploy via the CI
-
-Snapshot jars are release for all PR's, versioned with the short commit hash. To
-perform a production release, tag a commit with the version you want the jar to
-be published as.
-
-We authenticate with @hazzadous Sonatype credentials.
-
 ### Manual deployment
 
 #### 1. Get access to be able to deploy
