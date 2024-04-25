@@ -61,6 +61,21 @@ public class PostHogTest {
     }
 
     @Test
+    public void testCaptureSimpleWithTimestamp() {
+        String providedInstantExpected = "2024-04-25T02:02:02Z";
+        Instant timestamp = Instant.parse(providedInstantExpected);
+        ph.capture("test id", "test event", timestamp);
+        ph.shutdown();
+        assertEquals(1, sender.calls.size());
+        assertEquals(1, sender.calls.get(0).size());
+        JSONObject json = sender.calls.get(0).get(0);
+        // Assert JSON includes the expected distinct_id, event, and timestamp, ignoring
+        // any extraneus properties.
+        assertThatJson("{\"distinct_id\":\"test id\",\"event\":\"test event\",\"timestamp\":\"" + providedInstantExpected
+                + "\"}").isEqualTo(new JSONObject(json, "distinct_id", "event", "timestamp").toString());
+    }
+
+    @Test
     public void testEnsureEventHasGeneratedUuid() {
         // To ensure we have a way to deduplicate events that may be ingested multiple
         // times due to e.g. retries, we need to ensure that we have an identifier that
@@ -97,6 +112,26 @@ public class PostHogTest {
         JSONObject json = sender.calls.get(0).get(0);
         assertThatJson("{\"distinct_id\":\"test id\",\"event\":\"test event\""
                 + ",\"properties\":{\"movie_id\":123,\"category\":\"romcom\"},\"timestamp\":\"" + instantExpected
+                + "\"}").isEqualTo(new JSONObject(json, "distinct_id", "event", "properties", "timestamp").toString());
+    }
+
+    @Test
+    public void testCaptureWithPropertiesAndTimestamp() {
+        String providedInstantExpected = "2024-04-25T02:02:02Z";
+        Instant timestamp = Instant.parse(providedInstantExpected);
+        ph.capture("test id", "test event", new HashMap<String, Object>() {
+            {
+                put("movie_id", 123);
+                put("category", "romcom");
+            }
+        },
+        timestamp);
+        ph.shutdown();
+        assertEquals(1, sender.calls.size());
+        assertEquals(1, sender.calls.get(0).size());
+        JSONObject json = sender.calls.get(0).get(0);
+        assertThatJson("{\"distinct_id\":\"test id\",\"event\":\"test event\""
+                + ",\"properties\":{\"movie_id\":123,\"category\":\"romcom\"},\"timestamp\":\"" + providedInstantExpected
                 + "\"}").isEqualTo(new JSONObject(json, "distinct_id", "event", "properties", "timestamp").toString());
     }
 
