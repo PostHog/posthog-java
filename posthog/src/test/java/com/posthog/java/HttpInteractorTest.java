@@ -19,10 +19,10 @@ import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
 import okhttp3.mockwebserver.SocketPolicy;
 
-public class HttpSenderTest {
+public class HttpInteractorTest {
 
     public MockWebServer mockWebServer;
-    private HttpSender sender;
+    private HttpInteractor sender;
     private String apiKey = "UNIT_TESTING_API_KEY";
 
     @Before
@@ -32,7 +32,7 @@ public class HttpSenderTest {
 
         String httpUrl = mockWebServer.url("").toString();
         String host = httpUrl.substring(0, httpUrl.length() - 1); // strip trailing /
-        sender = new HttpSender.Builder(apiKey).host(host).maxRetries(1).build();
+        sender = new HttpInteractor.Builder(apiKey).host(host).maxRetries(1).build();
     }
 
     @After
