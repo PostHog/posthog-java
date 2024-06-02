@@ -312,7 +312,9 @@ public class PostHog {
             return Boolean.parseBoolean(getFeatureFlags(distinctId).get(featureFlag));
         }
 
-        return this.featureFlagPoller.isFeatureFlagEnabled(featureFlag, distinctId);
+        final boolean isEnabled = this.featureFlagPoller.isFeatureFlagEnabled(featureFlag, distinctId);
+        enqueueFeatureFlagEvent(featureFlag, distinctId, String.valueOf(isEnabled));
+        return isEnabled;
     }
 
     /**
