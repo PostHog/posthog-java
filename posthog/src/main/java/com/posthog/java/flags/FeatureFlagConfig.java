@@ -28,7 +28,7 @@ public class FeatureFlagConfig {
         private Map<String, Object> groups = new HashMap<>();
         private Map<String, String> personProperties = new HashMap<>();
         private Map<String, Map<String, String>> groupProperties = new HashMap<>();
-        private boolean sendFeatureFlagEvents = false;
+        private boolean sendFeatureFlagEvents = true;
 
         public Builder(String key, String distinctId) {
             this.key = key;
