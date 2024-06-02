@@ -16,7 +16,7 @@ public class FeatureFlagCondition {
     public static class Builder {
         private List<FeatureFlagProperty> properties = new ArrayList<>();
         private int rolloutPercentage = 0;
-        private String variant = "";
+        private String variant;
 
         public Builder properties(List<FeatureFlagProperty> properties) {
             this.properties = properties;
@@ -47,7 +47,11 @@ public class FeatureFlagCondition {
     }
 
     public Optional<String> getVariant() {
-        return Optional.ofNullable(variant);
+        if (this.variant.isEmpty()) {
+            return Optional.empty();
+        }
+
+        return Optional.of(variant);
     }
 
     @Override

@@ -2,6 +2,7 @@ package com.posthog.java;
 
 import java.time.Instant;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import com.posthog.java.flags.FeatureFlag;
 import com.posthog.java.flags.FeatureFlagConfig;
@@ -390,6 +391,26 @@ public class PostHog {
         }
 
         return this.featureFlagPoller.getFeatureFlag(config);
+    }
+
+    public Map<String, Optional<String>> getAllFeatureFlags(FeatureFlagConfig config) {
+        final List<FeatureFlag> localFeatureFlags = this.featureFlagPoller.getFeatureFlags();
+
+        final Map<String, Optional<String>> results = localFeatureFlags.stream()
+                .collect(Collectors.toMap(
+                        FeatureFlag::getKey,
+                        featureFlag -> {
+                            try {
+                                return this.featureFlagPoller.computeFlagLocally(featureFlag, config, Collections.emptyMap());
+                            } catch (InconclusiveMatchException e) {
+                                System.err.println("Inconclusive match for feature flag: " + featureFlag.getKey());
+                                return Optional.empty();
+                            }
+                        }
+                ));
+
+
+        return results;
     }
 
     private void enqueueFeatureFlagEvent(String featureFlagKey, String distinctId, String flagValue) {

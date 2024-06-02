@@ -30,6 +30,11 @@ public class FeatureFlagConfig {
         private Map<String, Map<String, String>> groupProperties = new HashMap<>();
         private boolean sendFeatureFlagEvents = true;
 
+        public Builder(String distinctId) {
+            this.key = null;
+            this.distinctId = distinctId;
+        }
+
         public Builder(String key, String distinctId) {
             this.key = key;
             this.distinctId = distinctId;

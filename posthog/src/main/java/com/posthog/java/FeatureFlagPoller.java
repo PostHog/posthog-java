@@ -123,6 +123,10 @@ public class FeatureFlagPoller {
      * @return boolean indicating whether the feature flag is enabled
      */
     public boolean isFeatureFlagEnabled(FeatureFlagConfig config) {
+        if (config.getKey() == null) {
+            return false;
+        }
+
         final Optional<FeatureFlag> featureFlag = getFeatureFlag(config);
         return featureFlag.map(flag -> {
             try {
@@ -183,6 +187,10 @@ public class FeatureFlagPoller {
      * @return Optional<FeatureFlag> feature flag
      */
     public Optional<FeatureFlag> getFeatureFlag(FeatureFlagConfig config) {
+        if (config.getKey() == null) {
+            return Optional.empty();
+        }
+
         final Optional<FeatureFlag> featureFlag = getFeatureFlags().stream()
                 .filter(flag -> flag.getKey().equals(config.getKey()))
                 .findFirst();
@@ -221,7 +229,7 @@ public class FeatureFlagPoller {
         return featureFlags;
     }
 
-    private Optional<String> computeFlagLocally(
+    Optional<String> computeFlagLocally(
             FeatureFlag flag,
             FeatureFlagConfig config,
             Map<String, FeatureFlagPropertyGroup> cohorts

@@ -8,6 +8,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
 import com.posthog.java.flags.FeatureFlag;
@@ -365,6 +366,22 @@ public class PostHogTest {
                 + ",\"properties\":{\"$feature_flag\":\"java-feature-flag\",\"$feature_flag_response\":\"true\", \"$feature_flag_errored\":\"false\"}"
                 +",\"timestamp\":\"" + instantExpected
                 + "\"}").isEqualTo(new JSONObject(json, "distinct_id", "event", "timestamp", "properties").toString());
+    }
+
+    @Test
+    public void testGetAllFeatureFlagsForUser() {
+        final FeatureFlagPoller featureFlagPoller = new FeatureFlagPoller.Builder("", "", new TestGetter()).build();
+        ph = new PostHog.BuilderWithCustomFeatureFlagPoller(featureFlagPoller)
+                .build();
+
+        final FeatureFlagConfig config = new FeatureFlagConfig.Builder("id-1")
+                .build();
+
+        final Map<String, Optional<String>> flags = ph.getAllFeatureFlags(config);
+        assertEquals(1, flags.size());
+        assertTrue(flags.containsKey("java-feature-flag"));
+        assertTrue(flags.get("java-feature-flag").isPresent());
+        assertEquals("variant-1", flags.get("java-feature-flag").get());
     }
 
     @Test
