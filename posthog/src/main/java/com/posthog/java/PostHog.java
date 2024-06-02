@@ -347,6 +347,7 @@ public class PostHog {
      *               groupProperties and personProperties are optional
      *               groupProperties is used for cohort matching
      *               personProperties is used for property matching
+     *               sendFeatureFlagEvents: boolean
      *               key and distinctId must not be null or empty
      *
      * @return Variant of the feature flag
@@ -376,6 +377,7 @@ public class PostHog {
      *               groupProperties and personProperties are optional
      *               groupProperties is used for cohort matching
      *               personProperties is used for property matching
+     *               sendFeatureFlagEvents: boolean
      *               key and distinctId must not be null or empty
      *
      * @return FeatureFlag payload
