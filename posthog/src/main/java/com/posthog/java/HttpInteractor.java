@@ -14,7 +14,7 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 
-public class HttpSender implements Sender {
+public class HttpInteractor implements Sender {
     private String apiKey;
     private String host;
     private OkHttpClient client;
@@ -53,12 +53,12 @@ public class HttpSender implements Sender {
             return this;
         }
 
-        public HttpSender build() {
-            return new HttpSender(this);
+        public HttpInteractor build() {
+            return new HttpInteractor(this);
         }
     }
 
-    private HttpSender(Builder builder) {
+    private HttpInteractor(Builder builder) {
         this.apiKey = builder.apiKey;
         this.host = builder.host;
         this.maxRetries = builder.maxRetries;

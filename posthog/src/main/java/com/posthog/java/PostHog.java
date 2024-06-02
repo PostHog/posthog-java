@@ -35,7 +35,7 @@ public class PostHog {
         }
 
         public PostHog build() {
-            this.sender = new HttpSender.Builder(apiKey).host(host).build();
+            this.sender = new HttpInteractor.Builder(apiKey).host(host).build();
             this.queueManager = new QueueManager.Builder(this.sender).build();
             return new PostHog(this);
         }
