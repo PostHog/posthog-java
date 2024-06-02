@@ -104,6 +104,13 @@ public class FeatureFlagPoller {
     }
 
     /**
+     * Forces a reload of the feature flags.
+     */
+    public void forceReload() {
+        this.fetchFeatureFlags();
+    }
+
+    /**
      * @param config FeatureFlagConfig
      *               key: String
      *               distinctId: String
