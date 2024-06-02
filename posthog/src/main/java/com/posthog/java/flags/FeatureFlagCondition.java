@@ -47,7 +47,11 @@ public class FeatureFlagCondition {
     }
 
     public Optional<String> getVariant() {
-        return Optional.ofNullable(variant);
+        if (variant == null || variant.isEmpty()) {
+            return Optional.empty();
+        }
+
+        return Optional.of(variant);
     }
 
     @Override
