@@ -1,15 +1,17 @@
 package com.posthog.java;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
 import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
+import static org.junit.Assert.*;
 
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.util.HashMap;
+import java.util.Optional;
 
+import com.posthog.java.flags.FeatureFlag;
+import com.posthog.java.flags.FeatureFlagConfig;
 import org.json.JSONObject;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -21,6 +23,7 @@ import mockit.MockUp;
 public class PostHogTest {
     private PostHog ph;
     private TestSender sender;
+    private TestGetter getter;
     private QueueManager queueManager;
     private String instantExpected = "2020-02-02T02:02:02Z";
     private Clock clock;
@@ -42,9 +45,14 @@ public class PostHogTest {
         sender = new TestSender();
         // by default not sleeping just dependent on queue size of 1, i.e. each call
         // separately
-        queueManager = new QueueManager.Builder(sender).sleepMs(0).maxTimeInQueue(Duration.ofDays(5)).maxQueueSize(1)
+        queueManager = new QueueManager.Builder(sender)
+                .sleepMs(0)
+                .maxTimeInQueue(Duration.ofDays(5))
+                .maxQueueSize(1)
                 .build();
-        ph = new PostHog.BuilderWithCustomQueueManager(queueManager, sender).build();
+
+        ph = new PostHog.BuilderWithCustomQueueManager(queueManager, sender)
+                .build();
     }
 
     @Test
@@ -287,7 +295,53 @@ public class PostHogTest {
         assertThatJson(
                 "{\"distinct_id\":\"id6\",\"event\":\"second batch event\",\"timestamp\":\"" + thirdInstant + "\"}")
                 .isEqualTo(new JSONObject(json, "distinct_id", "event", "timestamp").toString());
+    }
 
+    @Test
+    public void testIsFeatureFlagEnabledLocalNoConfig() {
+        final FeatureFlagPoller featureFlagPoller = new FeatureFlagPoller.Builder("", "", new TestGetter()).build();
+        ph = new PostHog.BuilderWithCustomFeatureFlagPoller(featureFlagPoller)
+                .build();
+
+        final boolean isEnabled = ph.isFeatureFlagEnabled("java-feature-flag", "id-1");
+        assertTrue(isEnabled);
+    }
+
+    @Test
+    public void testIsFeatureFlagEnabledLocal() {
+        final FeatureFlagPoller featureFlagPoller = new FeatureFlagPoller.Builder("", "", new TestGetter()).build();
+        ph = new PostHog.BuilderWithCustomFeatureFlagPoller(featureFlagPoller)
+                .build();
+
+        final FeatureFlagConfig featureFlagConfig = new FeatureFlagConfig.Builder("java-feature-flag", "id-1").build();
+        final boolean isEnabled = ph.isFeatureFlagEnabled(featureFlagConfig);
+        assertTrue(isEnabled);
+
+        final boolean isEnabled2 = ph.isFeatureFlagEnabled("java-feature-flag", "some-user");
+        assertFalse(isEnabled2);
+    }
+
+    @Test
+    public void testFeatureFlagRetrieveVariant() {
+        final FeatureFlagPoller featureFlagPoller = new FeatureFlagPoller.Builder("", "", new TestGetter()).build();
+        ph = new PostHog.BuilderWithCustomFeatureFlagPoller(featureFlagPoller)
+                .build();
+
+        final FeatureFlagConfig featureFlagConfig = new FeatureFlagConfig.Builder("java-feature-flag", "id-1").build();
+        final Optional<String> variant = ph.getFeatureFlagVariant(featureFlagConfig);
+        assertTrue(variant.isPresent());
+    }
+
+    @Test
+    public void restFeatureFlagRetrieveFlag() {
+        final FeatureFlagPoller featureFlagPoller = new FeatureFlagPoller.Builder("", "", new TestGetter()).build();
+        ph = new PostHog.BuilderWithCustomFeatureFlagPoller(featureFlagPoller)
+                .build();
+
+        final FeatureFlagConfig featureFlagConfig = new FeatureFlagConfig.Builder("java-feature-flag", "id-1").build();
+        final Optional<FeatureFlag> flag = ph.getFeatureFlag(featureFlagConfig);
+        assertTrue(flag.isPresent());
+        assertEquals("java-feature-flag", flag.get().getKey());
     }
 
     @Test

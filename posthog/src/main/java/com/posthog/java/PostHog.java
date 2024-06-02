@@ -3,8 +3,11 @@ package com.posthog.java;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
+import com.posthog.java.flags.FeatureFlag;
+import com.posthog.java.flags.FeatureFlagConfig;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -12,21 +15,25 @@ public class PostHog {
     private QueueManager queueManager;
     private Thread queueManagerThread;
     private Sender sender;
+    private FeatureFlagPoller featureFlagPoller;
 
     private static abstract class BuilderBase {
         protected QueueManager queueManager;
         protected Sender sender;
+        protected Getter getter;
+        protected FeatureFlagPoller featureFlagPoller;
     }
 
     public static class Builder extends BuilderBase {
         // required
-        private final String apiKey;
+        private final String projectApiKey;
 
         // optional
         private String host = "https://app.posthog.com";
+        private String personalApiKey;
 
-        public Builder(String apiKey) {
-            this.apiKey = apiKey;
+        public Builder(String projectApiKey) {
+            this.projectApiKey = projectApiKey;
         }
 
         public Builder host(String host) {
@@ -34,9 +41,26 @@ public class PostHog {
             return this;
         }
 
+        public Builder personalApiKey(String personalApiKey) {
+            this.personalApiKey = personalApiKey;
+            return this;
+        }
+
         public PostHog build() {
-            this.sender = new HttpInteractor.Builder(apiKey).host(host).build();
+            final HttpInteractor httpClient = new HttpInteractor.Builder(projectApiKey)
+                    .host(host)
+                    .build();
+
+            this.sender = httpClient;
+
             this.queueManager = new QueueManager.Builder(this.sender).build();
+
+            if (this.personalApiKey != null && !this.personalApiKey.isEmpty()) {
+                this.getter = httpClient;
+                this.featureFlagPoller = new FeatureFlagPoller.Builder(this.projectApiKey, this.personalApiKey, this.getter)
+                        .build();
+            }
+
             return new PostHog(this);
         }
     }
@@ -54,10 +78,27 @@ public class PostHog {
         }
     }
 
+    public static class BuilderWithCustomFeatureFlagPoller extends BuilderBase {
+
+        public BuilderWithCustomFeatureFlagPoller(FeatureFlagPoller featureFlagPoller) {
+            this.featureFlagPoller = featureFlagPoller;
+        }
+
+        public PostHog build() {
+            return new PostHog(this);
+        }
+    }
+
     private PostHog(BuilderBase builder) {
         this.queueManager = builder.queueManager;
         this.sender = builder.sender;
+        this.featureFlagPoller = builder.featureFlagPoller;
+
         startQueueManager();
+
+        if (this.featureFlagPoller != null) {
+            this.featureFlagPoller.poll();
+        }
     }
 
     public void shutdown() {
@@ -67,6 +108,10 @@ public class PostHog {
         } catch (InterruptedException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
+        }
+
+        if (featureFlagPoller != null) {
+            featureFlagPoller.shutdown();
         }
     }
 
@@ -82,7 +127,7 @@ public class PostHog {
     }
 
     /**
-     * 
+     *
      * @param distinctId which uniquely identifies your user in your database. Must
      *                   not be null or empty.
      * @param event      name of the event. Must not be null or empty.
@@ -93,7 +138,7 @@ public class PostHog {
     }
 
     /**
-     * 
+     *
      * @param distinctId which uniquely identifies your user in your database. Must
      *                   not be null or empty.
      * @param event      name of the event. Must not be null or empty.
@@ -103,7 +148,7 @@ public class PostHog {
     }
 
     /**
-     * 
+     *
      * @param distinctId        which uniquely identifies your user in your
      *                          database. Must not be null or empty.
      * @param properties        an array with any person properties you'd like to
@@ -123,7 +168,7 @@ public class PostHog {
     }
 
     /**
-     * 
+     *
      * @param distinctId which uniquely identifies your user in your database. Must
      *                   not be null or empty.
      * @param properties an array with any person properties you'd like to set.
@@ -133,7 +178,7 @@ public class PostHog {
     }
 
     /**
-     * 
+     *
      * @param distinctId distinct ID to merge. Must not be null or empty. Note: If
      *                   there is a conflict, the properties of this person will
      *                   take precedence.
@@ -152,7 +197,7 @@ public class PostHog {
     }
 
     /**
-     * 
+     *
      * @param distinctId which uniquely identifies your user in your database. Must
      *                   not be null or empty.
      * @param properties an array with any person properties you'd like to set.
@@ -167,7 +212,7 @@ public class PostHog {
     }
 
     /**
-     * 
+     *
      * @param distinctId which uniquely identifies your user in your database. Must
      *                   not be null or empty.
      * @param properties an array with any person properties you'd like to set.
@@ -202,40 +247,123 @@ public class PostHog {
     }
 
     /**
-     * 
+     * @param config FeatureFlagConfig
+     *               key: String
+     *               distinctId: String
+     *               groupProperties: Map<String, Map<String, String>>
+     *               personProperties: Map<String, String>
+     *               groupProperties and personProperties are optional
+     *               groupProperties is used for cohort matching
+     *               personProperties is used for property matching
+     *               key and distinctId must not be null or empty
+     *
+     * @return whether the feature flag is enabled or not
+     */
+    public boolean isFeatureFlagEnabled(FeatureFlagConfig config) {
+        if (this.featureFlagPoller == null || config == null) {
+            return false;
+        }
+
+        return this.featureFlagPoller.isFeatureFlagEnabled(config);
+    }
+
+    /**
+     * The isFeatureFlagEnabled method is used to determine whether a feature flag is enabled for a given user.
+     * It will try to use local evaluation first if a personal API key is provided, otherwise it will fallback to the server.
+     *
      * @param featureFlag which uniquely identifies your feature flag
      *
      * @param distinctId which uniquely identifies your user in your database. Must
      *                   not be null or empty.
-     * 
+     *
      * @return           whether the feature flag is enabled or not
      */
     public boolean isFeatureFlagEnabled(String featureFlag, String distinctId) {
-        if (getFeatureFlags(distinctId).get(featureFlag) == null)
-            return false;
-        return Boolean.parseBoolean(getFeatureFlags(distinctId).get(featureFlag));
+        if (this.featureFlagPoller == null) {
+            if (getFeatureFlags(distinctId).get(featureFlag) == null)
+                return false;
+            return Boolean.parseBoolean(getFeatureFlags(distinctId).get(featureFlag));
+        }
+
+        return this.featureFlagPoller.isFeatureFlagEnabled(featureFlag, distinctId);
     }
 
     /**
-     * 
+     * @deprecated Use {@link #getFeatureFlagVariant(FeatureFlagConfig)} instead
+     *
      * @param featureFlag which uniquely identifies your feature flag
      *
      * @param distinctId which uniquely identifies your user in your database. Must
      *                   not be null or empty.
-     * 
+     *
      * @return           Variant of the feature flag
      */
     public String getFeatureFlag(String featureFlag, String distinctId) {
-        return getFeatureFlags(distinctId).get(featureFlag);
+        if (this.featureFlagPoller == null) {
+            return getFeatureFlags(distinctId).get(featureFlag);
+        }
+
+        final FeatureFlagConfig featureFlagConfig = new FeatureFlagConfig.Builder(featureFlag, distinctId).build();
+        return this.featureFlagPoller.getFeatureFlagVariant(featureFlagConfig)
+                .orElse(null);
     }
 
     /**
-     * 
+     * The getFeatureFlagVariant method is used to determine the variant of a feature flag for a given user.
+     * It will try to use local evaluation first if a personal API key is provided, otherwise it will always return an empty Optional.
+     *
+     * @param config FeatureFlagConfig
+     *               key: String
+     *               distinctId: String
+     *               groupProperties: Map<String, Map<String, String>>
+     *               personProperties: Map<String, String>
+     *               groupProperties and personProperties are optional
+     *               groupProperties is used for cohort matching
+     *               personProperties is used for property matching
+     *               key and distinctId must not be null or empty
+     *
+     * @return Variant of the feature flag
+     */
+    public Optional<String> getFeatureFlagVariant(FeatureFlagConfig config) {
+        if (this.featureFlagPoller == null || config == null) {
+            return Optional.empty();
+        }
+
+        return this.featureFlagPoller.getFeatureFlagVariant(config);
+    }
+
+    /**
+     * The getFeatureFlag method is used to determine the payload of a feature flag for a given user.
+     * It will try to use local evaluation first if a personal API key is provided, otherwise it will always return an empty Optional.
+     *
+     * @param config FeatureFlagConfig
+     *               key: String
+     *               distinctId: String
+     *               groupProperties: Map<String, Map<String, String>>
+     *               personProperties: Map<String, String>
+     *               groupProperties and personProperties are optional
+     *               groupProperties is used for cohort matching
+     *               personProperties is used for property matching
+     *               key and distinctId must not be null or empty
+     *
+     * @return FeatureFlag payload
+     */
+    public Optional<FeatureFlag> getFeatureFlag(FeatureFlagConfig config) {
+        if (this.featureFlagPoller == null || config == null) {
+            return Optional.empty();
+        }
+
+        return this.featureFlagPoller.getFeatureFlag(config);
+    }
+
+    /**
+     * @deprecated Use {@link #getFeatureFlag(FeatureFlagConfig)} instead
+     *
      * @param featureFlag which uniquely identifies your feature flag
      *
      * @param distinctId which uniquely identifies your user in your database. Must
      *                   not be null or empty.
-     * 
+     *
      * @return           The feature flag payload, if it exists
      */
     public String getFeatureFlagPayload(String featureFlag, String distinctId) {
