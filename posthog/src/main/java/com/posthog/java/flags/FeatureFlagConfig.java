@@ -6,14 +6,11 @@ import java.util.Objects;
 import java.util.StringJoiner;
 
 public class FeatureFlagConfig {
-
     private final String key;
     private final String distinctId;
     private final Map<String, Object> groups;
     private final Map<String, String> personProperties;
     private final Map<String, Map<String, String>> groupProperties;
-    private final boolean onlyEvaluateLocally;
-    private final boolean sendFeatureFlagEvents;
 
     private FeatureFlagConfig(Builder builder) {
         this.key = builder.key;
@@ -21,8 +18,6 @@ public class FeatureFlagConfig {
         this.groups = builder.groups;
         this.personProperties = builder.personProperties;
         this.groupProperties = builder.groupProperties;
-        this.onlyEvaluateLocally = builder.onlyEvaluateLocally;
-        this.sendFeatureFlagEvents = builder.sendFeatureFlagEvents;
     }
 
     public static class Builder {
@@ -32,8 +27,6 @@ public class FeatureFlagConfig {
         private Map<String, Object> groups = new HashMap<>();
         private Map<String, String> personProperties = new HashMap<>();
         private Map<String, Map<String, String>> groupProperties = new HashMap<>();
-        private boolean onlyEvaluateLocally = false;
-        private boolean sendFeatureFlagEvents = false;
 
         public Builder(String key, String distinctId) {
             this.key = key;
@@ -52,16 +45,6 @@ public class FeatureFlagConfig {
 
         public Builder groupProperties(Map<String, Map<String, String>> groupProperties) {
             this.groupProperties = groupProperties;
-            return this;
-        }
-
-        public Builder onlyEvaluateLocally(boolean onlyEvaluateLocally) {
-            this.onlyEvaluateLocally = onlyEvaluateLocally;
-            return this;
-        }
-
-        public Builder sendFeatureFlagEvents(boolean sendFeatureFlagEvents) {
-            this.sendFeatureFlagEvents = sendFeatureFlagEvents;
             return this;
         }
 
@@ -90,25 +73,17 @@ public class FeatureFlagConfig {
         return groupProperties;
     }
 
-    public boolean isOnlyEvaluateLocally() {
-        return onlyEvaluateLocally;
-    }
-
-    public boolean isSendFeatureFlagEvents() {
-        return sendFeatureFlagEvents;
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         FeatureFlagConfig that = (FeatureFlagConfig) o;
-        return isOnlyEvaluateLocally() == that.isOnlyEvaluateLocally() && isSendFeatureFlagEvents() == that.isSendFeatureFlagEvents() && Objects.equals(getKey(), that.getKey()) && Objects.equals(getDistinctId(), that.getDistinctId()) && Objects.equals(getGroups(), that.getGroups()) && Objects.equals(getPersonProperties(), that.getPersonProperties()) && Objects.equals(getGroupProperties(), that.getGroupProperties());
+        return Objects.equals(key, that.key) && Objects.equals(distinctId, that.distinctId) && Objects.equals(groups, that.groups) && Objects.equals(personProperties, that.personProperties) && Objects.equals(groupProperties, that.groupProperties);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getKey(), getDistinctId(), getGroups(), getPersonProperties(), getGroupProperties(), isOnlyEvaluateLocally(), isSendFeatureFlagEvents());
+        return Objects.hash(key, distinctId, groups, personProperties, groupProperties);
     }
 
     @Override
@@ -119,8 +94,6 @@ public class FeatureFlagConfig {
                 .add("groups=" + groups)
                 .add("personProperties=" + personProperties)
                 .add("groupProperties=" + groupProperties)
-                .add("onlyEvaluateLocally=" + onlyEvaluateLocally)
-                .add("sendFeatureFlagEvents=" + sendFeatureFlagEvents)
                 .toString();
     }
 }
