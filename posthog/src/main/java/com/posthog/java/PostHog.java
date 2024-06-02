@@ -1,10 +1,7 @@
 package com.posthog.java;
 
 import java.time.Instant;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 import com.posthog.java.flags.FeatureFlag;
 import com.posthog.java.flags.FeatureFlagConfig;
@@ -17,17 +14,19 @@ public class PostHog {
     private Sender sender;
     private FeatureFlagPoller featureFlagPoller;
 
+    private Map<String, String> distinctIdsFeatureFlagsReported;
+
     private static abstract class BuilderBase {
         protected QueueManager queueManager;
         protected Sender sender;
         protected Getter getter;
         protected FeatureFlagPoller featureFlagPoller;
+        protected int maxDistinctIdsFeatureFlagsReport = 50_000;
     }
 
     public static class Builder extends BuilderBase {
         // required
         private final String projectApiKey;
-
         // optional
         private String host = "https://app.posthog.com";
         private String personalApiKey;
@@ -43,6 +42,11 @@ public class PostHog {
 
         public Builder personalApiKey(String personalApiKey) {
             this.personalApiKey = personalApiKey;
+            return this;
+        }
+
+        public Builder maxDistinctIdsFeatureFlagsReport(int maxDistinctIdsFeatureFlagsReport) {
+            this.maxDistinctIdsFeatureFlagsReport = maxDistinctIdsFeatureFlagsReport;
             return this;
         }
 
@@ -89,10 +93,25 @@ public class PostHog {
         }
     }
 
+    public static class BuilderWithCustomQueueManagerAndCustomFeatureFlagPoller extends BuilderBase {
+
+            public BuilderWithCustomQueueManagerAndCustomFeatureFlagPoller(QueueManager queueManager, FeatureFlagPoller featureFlagPoller, Sender... sender) {
+                this.queueManager = queueManager;
+                this.featureFlagPoller = featureFlagPoller;
+                if (sender.length > 0)
+                    this.sender = sender[0];
+            }
+
+            public PostHog build() {
+                return new PostHog(this);
+            }
+    }
+
     private PostHog(BuilderBase builder) {
         this.queueManager = builder.queueManager;
         this.sender = builder.sender;
         this.featureFlagPoller = builder.featureFlagPoller;
+        this.distinctIdsFeatureFlagsReported = Collections.synchronizedMap(new LimitedSizeMap<>(builder.maxDistinctIdsFeatureFlagsReport));
 
         startQueueManager();
 
@@ -145,6 +164,10 @@ public class PostHog {
      */
     public void capture(String distinctId, String event) {
         enqueue(distinctId, event, null);
+    }
+
+    public void capture(String distinctId, String event, boolean sendFeatureFlagEvents) {
+
     }
 
     /**
@@ -264,7 +287,11 @@ public class PostHog {
             return false;
         }
 
-        return this.featureFlagPoller.isFeatureFlagEnabled(config);
+        final boolean isEnabled = this.featureFlagPoller.isFeatureFlagEnabled(config);
+        if (config.isSendFeatureFlagEvents()) {
+            enqueueFeatureFlagEvent(config.getKey(), config.getDistinctId(), String.valueOf(isEnabled));
+        }
+        return isEnabled;
     }
 
     /**
@@ -329,7 +356,12 @@ public class PostHog {
             return Optional.empty();
         }
 
-        return this.featureFlagPoller.getFeatureFlagVariant(config);
+        final Optional<String> variant = this.featureFlagPoller.getFeatureFlagVariant(config);
+        if (config.isSendFeatureFlagEvents()) {
+            enqueueFeatureFlagEvent(config.getKey(), config.getDistinctId(), variant.orElse(null));
+        }
+
+        return variant;
     }
 
     /**
@@ -354,6 +386,18 @@ public class PostHog {
         }
 
         return this.featureFlagPoller.getFeatureFlag(config);
+    }
+
+    private void enqueueFeatureFlagEvent(String featureFlagKey, String distinctId, String flagValue) {
+        if (!this.distinctIdsFeatureFlagsReported.containsKey(distinctId)) {
+            final Map<String, Object> properties = new HashMap<>();
+            properties.put("$feature_flag", featureFlagKey);
+            properties.put("$feature_flag_response", flagValue);
+            properties.put("$feature_flag_errored", String.valueOf(flagValue == null));
+            enqueue(distinctId, "$feature_flag_called", properties);
+
+            this.distinctIdsFeatureFlagsReported.put(distinctId, featureFlagKey);
+        }
     }
 
     /**

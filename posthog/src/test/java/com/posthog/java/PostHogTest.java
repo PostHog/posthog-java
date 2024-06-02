@@ -345,6 +345,29 @@ public class PostHogTest {
     }
 
     @Test
+    public void testFeatureFlagEvents() {
+        final FeatureFlagPoller featureFlagPoller = new FeatureFlagPoller.Builder("", "", new TestGetter()).build();
+        ph = new PostHog.BuilderWithCustomQueueManagerAndCustomFeatureFlagPoller(queueManager, featureFlagPoller)
+                .build();
+
+        final FeatureFlagConfig featureFlagConfig = new FeatureFlagConfig.Builder("java-feature-flag", "id-1")
+                .sendFeatureFlagEvents(true)
+                .build();
+
+        final boolean isEnabled = ph.isFeatureFlagEnabled(featureFlagConfig);
+        assertTrue(isEnabled);
+
+        ph.shutdown();
+        assertEquals(1, sender.calls.size());
+        assertEquals(1, sender.calls.get(0).size());
+        JSONObject json = sender.calls.get(0).get(0);
+        assertThatJson("{\"distinct_id\":\"id-1\",\"event\":\"$feature_flag_called\""
+                + ",\"properties\":{\"$feature_flag\":\"java-feature-flag\",\"$feature_flag_response\":\"true\", \"$feature_flag_errored\":\"false\"}"
+                +",\"timestamp\":\"" + instantExpected
+                + "\"}").isEqualTo(new JSONObject(json, "distinct_id", "event", "timestamp", "properties").toString());
+    }
+
+    @Test
     public void testFlagActive() throws InterruptedException {
         boolean flag = ph.isFeatureFlagEnabled("test-flag", "test-user");
 
