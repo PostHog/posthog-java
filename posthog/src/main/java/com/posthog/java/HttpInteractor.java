@@ -3,6 +3,7 @@ package com.posthog.java;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.List;
+import java.util.Map;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -14,7 +15,7 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 
-public class HttpInteractor implements Sender {
+public class HttpInteractor implements Sender, Getter {
     private String apiKey;
     private String host;
     private OkHttpClient client;
@@ -186,6 +187,37 @@ public class HttpInteractor implements Sender {
                 response.close();
             }
         }
+        return null;
+    }
+
+    @Override
+    public JSONObject get(String route, Map<String, String> headers) {
+        final String url = this.host + route;
+        final Request.Builder requestBuilder = new Request.Builder()
+                .url(url);
+
+        if (headers != null) {
+            headers.forEach(requestBuilder::addHeader);
+        }
+
+        final Request request = requestBuilder.build();
+
+        try (final Response response = this.client.newCall(request).execute()) {
+            if (!response.isSuccessful()) {
+                System.err.println("Failed to fetch feature flags: " + response.message());
+                return null;
+            }
+
+            if (response.body() == null) {
+                System.err.println("Failed to fetch feature flags: response body is null");
+                return null;
+            }
+
+            return new JSONObject(response.body().string());
+        } catch (IOException e) {
+            System.err.println("Failed to fetch feature flags: " + e.getMessage());
+        }
+
         return null;
     }
 }
