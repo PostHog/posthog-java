@@ -104,6 +104,28 @@ public class PostHog {
 
     /**
      * 
+     * @param distinctId which uniquely identifies your user in your database. Must
+     *                   not be null or empty.
+     * @param properties an array with any event properties you'd like to set.
+     */
+    public void page(String url, String distinctId, Map<String, Object> properties) {
+        properties.put("$current_url", url);
+        capture(distinctId, "$pageview", properties);
+    }
+
+    /**
+     * 
+     * @param distinctId which uniquely identifies your user in your database. Must
+     *                   not be null or empty.
+     */
+    public void page(String url, String distinctId) {
+        Map<String, Object> properties = new HashMap<>();
+        properties.put("$current_url", url);
+        capture(distinctId, "$pageview", properties);
+    }
+
+    /**
+     * 
      * @param distinctId        which uniquely identifies your user in your
      *                          database. Must not be null or empty.
      * @param properties        an array with any person properties you'd like to

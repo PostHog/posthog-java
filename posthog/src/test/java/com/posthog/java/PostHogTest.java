@@ -61,6 +61,21 @@ public class PostHogTest {
     }
 
     @Test
+    public void testPage() {
+        String url = "https://example.com";
+        ph.page(url, "test id");
+        ph.shutdown();
+        assertEquals(1, sender.calls.size());
+        assertEquals(1, sender.calls.get(0).size());
+        JSONObject json = sender.calls.get(0).get(0);
+        // Assert JSON includes the expected distinct_id, event, and timestamp, ignoring
+        // any extraneus properties.
+        System.out.println(json);
+        assertThatJson("{\"distinct_id\":\"test id\",\"event\":\"$pageview\",\"properties\":{\"$current_url\":\""
+            + url + "\"}}").isEqualTo(new JSONObject(json, "distinct_id", "event", "properties").toString());
+    }
+
+    @Test
     public void testEnsureEventHasGeneratedUuid() {
         // To ensure we have a way to deduplicate events that may be ingested multiple
         // times due to e.g. retries, we need to ensure that we have an identifier that
