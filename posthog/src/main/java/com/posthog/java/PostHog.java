@@ -9,10 +9,10 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 public class PostHog {
-    private QueueManager queueManager;
+    private final QueueManager queueManager;
     private Thread queueManagerThread;
-    private Sender sender;
-    private PostHogLogger logger; 
+    private final Sender sender;
+    private final PostHogLogger logger;
 
     private static abstract class BuilderBase {
         protected QueueManager queueManager;

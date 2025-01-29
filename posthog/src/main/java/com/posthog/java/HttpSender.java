@@ -15,12 +15,12 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 
 public class HttpSender implements Sender {
-    private String apiKey;
-    private String host;
-    private OkHttpClient client;
-    private int maxRetries;
-    private Duration initialRetryInterval;
-    private PostHogLogger logger;
+    private final String apiKey;
+    private final String host;
+    private final OkHttpClient client;
+    private final int maxRetries;
+    private final Duration initialRetryInterval;
+    private final PostHogLogger logger;
 
     public static class Builder {
         // required
@@ -34,6 +34,7 @@ public class HttpSender implements Sender {
 
         // optional
         private Duration initialRetryInterval = Duration.ofMillis(500);
+        private PostHogLogger logger = new DefaultPostHogLogger();
 
         public Builder(String apiKey) {
             this.apiKey = apiKey;
@@ -61,9 +62,6 @@ public class HttpSender implements Sender {
         }
 
         public HttpSender build() {
-            if (this.logger == null) {
-                this.logger = new DefaultPostHogLogger();
-            }
             return new HttpSender(this);
         }
     }
@@ -181,9 +179,7 @@ public class HttpSender implements Sender {
             response = call.execute();
 
             if (response.isSuccessful()) {
-                JSONObject responseJSON = new JSONObject(response.body().string());
-
-                return responseJSON;
+                return new JSONObject(response.body().string());
             }
 
             if (response.code() >= 400 && response.code() < 500) {
@@ -191,7 +187,7 @@ public class HttpSender implements Sender {
                 return null;
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error("Error calling API", e);
         } finally {
             if (response != null) {
                 response.close();
