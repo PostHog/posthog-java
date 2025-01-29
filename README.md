@@ -45,6 +45,7 @@ https://central.sonatype.org/publish/publish-guide/
       </activation>
       <properties>
         <gpg.executable>gpg</gpg.executable>
+        <gpg.keyname>GPG_KEY_ID</gpg.keyname>
         <gpg.passphrase>GPG_PASSPHRASE</gpg.passphrase>
       </properties>
     </profile>
@@ -56,6 +57,16 @@ If your password has special characters, use an environment variable instead (an
 
 ```bash
 export GPG_PASSPHRASE="..."
+```
+
+If maven complains your private key is not available on keyserver.ubuntu.com
+
+```bash
+gpg --list-secret-keys --keyid-format LONG
+# returns something like:
+# sec   ed12345/123F1234FE56565 2023-09-22 [SC]
+# the ID will be the part after the slash, in this case `123F1234FE56565`.
+gpg --keyserver keyserver.ubuntu.com --send-keys 123F1234FE56565
 ```
 
 #### 3. Deploy
