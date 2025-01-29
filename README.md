@@ -1,7 +1,7 @@
 ⚠️ Warning - This is beta and may break ⚠️
 
 User guide available on
-[posthog.com/docs/integrate/server/java](https://posthog.com/docs/integrate/server/java).
+[posthog.com/docs/integrate/server/java](https://posthog.com/docs/libraries/java).
 
 
 ## Releasing
@@ -18,6 +18,8 @@ https://central.sonatype.org/publish/publish-guide/
 2. Create a ticket similar to https://issues.sonatype.org/browse/OSSRH-59076 &
    get one of the people who already have access to comment on the request with
    approval (you can ask in #team-platform channel).
+3. Log in to https://oss.sonatype.org/
+4. Click on your user, then "User Profile" and then get the "User Token", this is the username and password you will use in the next steps.
 
 #### 2. Prepare your local setup
 
@@ -43,11 +45,28 @@ https://central.sonatype.org/publish/publish-guide/
       </activation>
       <properties>
         <gpg.executable>gpg</gpg.executable>
-        <gpg.passphrase>GPG_PASSPHASE</gpg.passphrase>
+        <gpg.keyname>GPG_KEY_ID</gpg.keyname>
+        <gpg.passphrase>GPG_PASSPHRASE</gpg.passphrase>
       </properties>
     </profile>
   </profiles>
 </settings>
+```
+
+If your password has special characters, use an environment variable instead (and omit the `<gpg.passphrase>` xml):
+
+```bash
+export GPG_PASSPHRASE="..."
+```
+
+If maven complains your private key is not available on keyserver.ubuntu.com
+
+```bash
+gpg --list-secret-keys --keyid-format LONG
+# returns something like:
+# sec   ed12345/123F1234FE56565 2023-09-22 [SC]
+# the ID will be the part after the slash, in this case `123F1234FE56565`.
+gpg --keyserver keyserver.ubuntu.com --send-keys 123F1234FE56565
 ```
 
 #### 3. Deploy
