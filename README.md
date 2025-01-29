@@ -52,6 +52,12 @@ https://central.sonatype.org/publish/publish-guide/
 </settings>
 ```
 
+If your password has special characters, use an environment variable instead (and omit the `<gpg.passphrase>` xml):
+
+```bash
+export GPG_PASSPHASE="..."
+```
+
 #### 3. Deploy
 
 1. Change the version in `posthog/pom.xml` accordingly (latest versions can be
