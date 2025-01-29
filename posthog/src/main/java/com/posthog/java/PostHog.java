@@ -12,10 +12,12 @@ public class PostHog {
     private QueueManager queueManager;
     private Thread queueManagerThread;
     private Sender sender;
+    private PostHogLogger logger; 
 
     private static abstract class BuilderBase {
         protected QueueManager queueManager;
         protected Sender sender;
+        protected PostHogLogger logger; 
     }
 
     public static class Builder extends BuilderBase {
@@ -34,8 +36,17 @@ public class PostHog {
             return this;
         }
 
+        public Builder logger(PostHogLogger logger) {
+            this.logger = logger;
+            return this;
+        }
+
         public PostHog build() {
-            this.sender = new HttpSender.Builder(apiKey).host(host).build();
+            if (this.logger == null) {
+                this.logger = new DefaultPostHogLogger();
+            }
+            
+            this.sender = new HttpSender.Builder(apiKey).host(host).logger(logger).build();
             this.queueManager = new QueueManager.Builder(this.sender).build();
             return new PostHog(this);
         }
@@ -50,6 +61,9 @@ public class PostHog {
         }
 
         public PostHog build() {
+            if (this.logger == null) {
+                this.logger = new DefaultPostHogLogger();
+            }
             return new PostHog(this);
         }
     }
@@ -57,6 +71,7 @@ public class PostHog {
     private PostHog(BuilderBase builder) {
         this.queueManager = builder.queueManager;
         this.sender = builder.sender;
+        this.logger = builder.logger;
         startQueueManager();
     }
 
@@ -65,8 +80,7 @@ public class PostHog {
         try {
             queueManagerThread.join(); // wait for the current items in queue to be sent
         } catch (InterruptedException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            logger.error("Error shutting down PostHog", e);
         }
     }
 
@@ -196,7 +210,7 @@ public class PostHog {
                 eventJson.put("properties", properties);
             }
         } catch (JSONException e) {
-            e.printStackTrace();
+            logger.error("Error creating event JSON", e);
         }
         return eventJson;
     }
