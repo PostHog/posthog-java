@@ -15,11 +15,12 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 
 public class HttpSender implements Sender {
-    private String apiKey;
-    private String host;
-    private OkHttpClient client;
-    private int maxRetries;
-    private Duration initialRetryInterval;
+    private final String apiKey;
+    private final String host;
+    private final OkHttpClient client;
+    private final int maxRetries;
+    private final Duration initialRetryInterval;
+    private final PostHogLogger logger;
 
     public static class Builder {
         // required
@@ -33,6 +34,7 @@ public class HttpSender implements Sender {
 
         // optional
         private Duration initialRetryInterval = Duration.ofMillis(500);
+        private PostHogLogger logger = new DefaultPostHogLogger();
 
         public Builder(String apiKey) {
             this.apiKey = apiKey;
@@ -53,6 +55,12 @@ public class HttpSender implements Sender {
             return this;
         }
 
+
+        public Builder logger(PostHogLogger logger) {
+            this.logger = logger;
+            return this;
+        }
+
         public HttpSender build() {
             return new HttpSender(this);
         }
@@ -63,6 +71,7 @@ public class HttpSender implements Sender {
         this.host = builder.host;
         this.maxRetries = builder.maxRetries;
         this.initialRetryInterval = builder.initialRetryInterval;
+        this.logger = builder.logger;
         this.client = new OkHttpClient();
     }
 
@@ -102,7 +111,7 @@ public class HttpSender implements Sender {
                 // TODO: verify if we need to retry on IOException, this may
                 // already be handled by OkHTTP. See
                 // https://square.github.io/okhttp/4.x/okhttp/okhttp3/-ok-http-client/-builder/retry-on-connection-failure/
-                e.printStackTrace();
+                logger.error("Error sending events to PostHog", e);
             } finally {
                 // must always close an OkHTTP response
                 // https://square.github.io/okhttp/4.x/okhttp/okhttp3/-call/execute/
@@ -125,7 +134,7 @@ public class HttpSender implements Sender {
             // On retries, make sure we log the response code or exception such
             // that people will know if something is up, ensuring we include the
             // retry count and how long we will wait before retrying.
-            System.out.println("Retrying sending events to PostHog after " + retries + " retries. Waiting for "
+            logger.debug("Retrying sending events to PostHog after " + retries + " retries. Waiting for "
                     + retryInterval + "ms before retrying.");
 
             try {
@@ -134,7 +143,7 @@ public class HttpSender implements Sender {
                 // TODO this is a blocking sleep, we should use `Future`s here instead
                 Thread.sleep(retryInterval);
             } catch (Exception e) {
-                e.printStackTrace();
+                logger.error("Error sending events to PostHog", e);
             }
         }
     }
@@ -145,7 +154,7 @@ public class HttpSender implements Sender {
             jsonObject.put("api_key", apiKey);
             jsonObject.put("batch", events);
         } catch (JSONException e) {
-            e.printStackTrace();
+            logger.error("Error creating event JSON", e);
         }
         return jsonObject.toString();
     }
@@ -156,7 +165,7 @@ public class HttpSender implements Sender {
             bodyJSON.put("api_key", apiKey);
             bodyJSON.put("distinct_id", distinctId);
         } catch (JSONException e) {
-            e.printStackTrace();
+            logger.error("Error creating event JSON", e);
         }
 
         Response response = null;
@@ -170,17 +179,15 @@ public class HttpSender implements Sender {
             response = call.execute();
 
             if (response.isSuccessful()) {
-                JSONObject responseJSON = new JSONObject(response.body().string());
-
-                return responseJSON;
+                return new JSONObject(response.body().string());
             }
 
             if (response.code() >= 400 && response.code() < 500) {
-                System.err.println("Error calling API: " + response.body().string());
+                logger.error("Error calling API: " + response.body().string());
                 return null;
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error("Error calling API", e);
         } finally {
             if (response != null) {
                 response.close();
