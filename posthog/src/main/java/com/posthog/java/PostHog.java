@@ -83,8 +83,8 @@ public class PostHog {
         // TODO handle interrupts? (via addShutdownHook)
     }
 
-    private void enqueue(String distinctId, String event, Map<String, Object> properties) {
-        JSONObject eventJson = getEventJson(event, distinctId, properties);
+    private void enqueue(String distinctId, String event, Map<String, Object> properties, Instant timestamp) {
+        JSONObject eventJson = getEventJson(event, distinctId, properties, timestamp);
         queueManager.add(eventJson);
     }
 
@@ -96,7 +96,19 @@ public class PostHog {
      * @param properties an array with any event properties you'd like to set.
      */
     public void capture(String distinctId, String event, Map<String, Object> properties) {
-        enqueue(distinctId, event, properties);
+        enqueue(distinctId, event, properties, Instant.now());
+    }
+
+    /**
+     *
+     * @param distinctId which uniquely identifies your user in your database. Must
+     *                   not be null or empty.
+     * @param event      name of the event. Must not be null or empty.
+     * @param properties an array with any event properties you'd like to set.
+     * @param timestamp the timestamp of the event.
+     */
+    public void capture(String distinctId, String event, Map<String, Object> properties, Instant timestamp) {
+        enqueue(distinctId, event, properties, timestamp);
     }
 
     /**
@@ -106,11 +118,22 @@ public class PostHog {
      * @param event      name of the event. Must not be null or empty.
      */
     public void capture(String distinctId, String event) {
-        enqueue(distinctId, event, null);
+        enqueue(distinctId, event, null, Instant.now());
     }
 
     /**
-     * 
+     *
+     * @param distinctId which uniquely identifies your user in your database. Must
+     *                   not be null or empty.
+     * @param event      name of the event. Must not be null or empty.
+     * @param timestamp the timestamp of the event.
+     */
+    public void capture(String distinctId, String event, Instant timestamp) {
+        enqueue(distinctId, event, null, timestamp);
+    }
+
+    /**
+     *
      * @param distinctId        which uniquely identifies your user in your
      *                          database. Must not be null or empty.
      * @param properties        an array with any person properties you'd like to
@@ -126,7 +149,7 @@ public class PostHog {
         if (propertiesSetOnce != null) {
             props.put("$set_once", propertiesSetOnce);
         }
-        enqueue(distinctId, "$identify", props);
+        enqueue(distinctId, "$identify", props, Instant.now());
     }
 
     /**
@@ -155,7 +178,7 @@ public class PostHog {
                 put("alias", alias);
             }
         };
-        enqueue(distinctId, "$create_alias", props);
+        enqueue(distinctId, "$create_alias", props, Instant.now());
     }
 
     /**
@@ -170,7 +193,7 @@ public class PostHog {
                 put("$set", properties);
             }
         };
-        enqueue(distinctId, "$set", props);
+        enqueue(distinctId, "$set", props, Instant.now());
     }
 
     /**
@@ -186,16 +209,16 @@ public class PostHog {
                 put("$set_once", properties);
             }
         };
-        enqueue(distinctId, "$set_once", props);
+        enqueue(distinctId, "$set_once", props, Instant.now());
     }
 
-    private JSONObject getEventJson(String event, String distinctId, Map<String, Object> properties) {
+    private JSONObject getEventJson(String event, String distinctId, Map<String, Object> properties, Instant timestamp) {
         JSONObject eventJson = new JSONObject();
         try {
             // Ensure that we generate an identifier for this event such that we can e.g.
             // deduplicate server-side any duplicates we may receive.
             eventJson.put("uuid", UUID.randomUUID().toString());
-            eventJson.put("timestamp", Instant.now().toString());
+            eventJson.put("timestamp", timestamp.toString());
             eventJson.put("distinct_id", distinctId);
             eventJson.put("event", event);
             eventJson.put("$lib", "posthog-java");
