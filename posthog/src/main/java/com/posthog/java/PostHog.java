@@ -17,7 +17,7 @@ public class PostHog {
     private static abstract class BuilderBase {
         protected QueueManager queueManager;
         protected Sender sender;
-        protected PostHogLogger logger; 
+        protected PostHogLogger logger = new DefaultPostHogLogger();
     }
 
     public static class Builder extends BuilderBase {
@@ -42,10 +42,6 @@ public class PostHog {
         }
 
         public PostHog build() {
-            if (this.logger == null) {
-                this.logger = new DefaultPostHogLogger();
-            }
-            
             this.sender = new HttpSender.Builder(apiKey).host(host).logger(logger).build();
             this.queueManager = new QueueManager.Builder(this.sender).build();
             return new PostHog(this);
@@ -61,9 +57,6 @@ public class PostHog {
         }
 
         public PostHog build() {
-            if (this.logger == null) {
-                this.logger = new DefaultPostHogLogger();
-            }
             return new PostHog(this);
         }
     }
