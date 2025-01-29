@@ -1,7 +1,7 @@
 ⚠️ Warning - This is beta and may break ⚠️
 
 User guide available on
-[posthog.com/docs/integrate/server/java](https://posthog.com/docs/integrate/server/java).
+[posthog.com/docs/integrate/server/java](https://posthog.com/docs/libraries/java).
 
 
 ## Releasing
@@ -18,6 +18,8 @@ https://central.sonatype.org/publish/publish-guide/
 2. Create a ticket similar to https://issues.sonatype.org/browse/OSSRH-59076 &
    get one of the people who already have access to comment on the request with
    approval (you can ask in #team-platform channel).
+3. Log in to https://oss.sonatype.org/
+4. Click on your user, then "User Profile" and then get the "User Token", this is the username and password you will use in the next steps.
 
 #### 2. Prepare your local setup
 

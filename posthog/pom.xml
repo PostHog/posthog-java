@@ -6,7 +6,7 @@
 
   <groupId>com.posthog.java</groupId>
   <artifactId>posthog</artifactId>
-  <version>1.1.0-SNAPSHOT</version>
+  <version>1.2.0</version>
 
   <name>PostHog Java</name>
   <description>The official way to add PostHog to your Java app.</description>
