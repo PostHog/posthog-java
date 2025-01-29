@@ -45,7 +45,7 @@ https://central.sonatype.org/publish/publish-guide/
       </activation>
       <properties>
         <gpg.executable>gpg</gpg.executable>
-        <gpg.passphrase>GPG_PASSPHASE</gpg.passphrase>
+        <gpg.passphrase>GPG_PASSPHRASE</gpg.passphrase>
       </properties>
     </profile>
   </profiles>
@@ -55,7 +55,7 @@ https://central.sonatype.org/publish/publish-guide/
 If your password has special characters, use an environment variable instead (and omit the `<gpg.passphrase>` xml):
 
 ```bash
-export GPG_PASSPHASE="..."
+export GPG_PASSPHRASE="..."
 ```
 
 #### 3. Deploy
