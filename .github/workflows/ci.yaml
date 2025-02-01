@@ -15,7 +15,7 @@ on:
 
 jobs:
   ci:
-    name: Package, Test, and Release
+    name: Package and Test
     runs-on: ubuntu-latest
 
     steps:
@@ -27,24 +27,6 @@ jobs:
         with:
           java-version: 8
           distribution: 'adopt'
-          server-id: ossrh
-          server-username: MAVEN_USERNAME
-          server-password: MAVEN_PASSWORD
-          gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
-          gpg-passphrase: GPG_PASSPHRASE
-          cache: maven
-
-      - name: Set POM version
-        # Set the version in the POM to the short commit hash and append
-        # -SNAPSHOT to the version. This allows us to test the release process
-        # on branches without having to push a tag. If we are triggered by a
-        # release event, we set the version to the release version as the tag.
-        run: |
-          if [[ $GITHUB_EVENT_NAME == release ]]; then
-            mvn versions:set -DnewVersion=${GITHUB_REF#refs/tags/} --file posthog/pom.xml
-          else
-            mvn versions:set -DnewVersion=$(git rev-parse --short HEAD)-SNAPSHOT --file posthog/pom.xml
-          fi
 
       - name: Build with Maven
         run: mvn package --file posthog/pom.xml -DskipTests --batch-mode --show-version
