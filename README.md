@@ -1,6 +1,6 @@
 # posthog-java
 
-Code from this repository has been moved to [posthog-android](https://github.com/PostHog/posthog-android/tree/main/posthog-server).
+The new version of this package can be found in [posthog-android](https://github.com/PostHog/posthog-android/tree/main/posthog-server).
 
 Please open an issue on the [posthog-android](https://github.com/posthog/posthog-android/issues) repository if you have any questions or issues.
 
